@@ -100,7 +100,7 @@ def generate_answer_stream(question: str):
         return
 
     # Préparer le contexte via le retriever
-    docs = retriever.get_relevant_documents(question)
+    docs = retriever.invoke(question)
     context_text = "\n".join([doc.page_content for doc in docs])
 
     # Combiner question et contexte pour le prompt
