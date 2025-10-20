@@ -99,13 +99,18 @@ def generate_answer_stream(question: str):
         yield "Veuillez poser une question."
         return
 
-    # Préparer le contexte via le retriever
-    docs = retriever.invoke(question)
-    context_text = "\n".join([doc.page_content for doc in docs])
+    # Récupérer les documents depuis le retriever
+    docs = retriever.invoke({"query": question})
+    
+    context_text = "\n".join([getattr(doc, "page_content", str(doc)) for doc in docs])
 
-    # Combiner question et contexte pour le prompt
-    prompt_input = {"question": question, "context": context_text}
+    # Préparer le prompt avec le contexte
+    prompt_input = {
+        "question": question,
+        "context": context_text
+    }
 
+    # Streamer la réponse
     streamed_text = ""
     for chunk in rag_chain.stream(prompt_input):
         streamed_text += chunk
