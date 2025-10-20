@@ -119,13 +119,21 @@ def generate_answer_stream(question: str, retriever, rag_chain):
     try:
         # Récupérer les documents depuis le retriever
         docs = retriever.invoke({"query": question})
-        docs = [doc for doc in docs if getattr(doc, "page_content", None) is not None]
 
-        if not docs:
-            yield "Aucun document pertinent trouvé."
+        # Filtrer les documents sans page_content ou dont page_content n'est pas une chaîne
+        valid_docs = []
+        for doc in docs:
+            content = getattr(doc, "page_content", None)
+            if content is not None and isinstance(content, str):
+                valid_docs.append(content)
+            else:
+                print(f"Document invalide: {doc}")
+
+        if not valid_docs:
+            yield "Aucun document valide trouvé pour répondre à votre question."
             return
 
-        context_text = "\n".join([getattr(doc, "page_content", "") for doc in docs])
+        context_text = "\n".join(valid_docs)
         prompt_input = {
             "question": question,
             "context": context_text
@@ -139,6 +147,7 @@ def generate_answer_stream(question: str, retriever, rag_chain):
 
     except Exception as e:
         yield f"Erreur lors de la génération de la réponse : {str(e)}"
+
 
 # -----------------------------
 # Initialisation globale
