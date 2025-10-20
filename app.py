@@ -1,46 +1,51 @@
-import gradio as gr
+import streamlit as st
 from rag_pipeline import generate_answer_stream
 
-# --- Gradio UI ---
-with gr.Blocks(theme=gr.themes.Default()) as demo:
-    # Title
-    gr.Markdown(
-        "<h1 style='color:#1E3A8A; font-family:Inter; font-weight:bold'>Assistant juridique OHADA</h1>"
-    )
-    
-    # Chatbot with modern message format
-    chatbot = gr.Chatbot(
-        label="OHADA Legal Assistant",
-        elem_id="chatbot",
-        type="messages"  # ✅ OpenAI-style format
-    )
-    
-    # Suggested question buttons
-    suggested_questions = [
-        "Quelle est la procédure pour un arbitrage ?",
-        "La SARL est-elle une société de personnes ou de capitaux ?",
-        "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
-    ]
+st.set_page_config(page_title="OHADA Legal Assistant", layout="wide")
 
-    # Create buttons in a row
-    with gr.Row():
-        for q in suggested_questions:
-            gr.Button(q).click(
-                fn=lambda question=q: list(generate_answer_stream(question)),
-                outputs=chatbot
-            )
+# --- Initialize chat history ---
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-    # Textbox for user question
-    msg = gr.Textbox(
-        label="Pose ta question juridique :",
-        placeholder="Ex : Quelle est la procédure pour un arbitrage ?",
-    )
+st.title("Assistant juridique OHADA")
 
-    # Submit button
-    submit = gr.Button("Répondre")
+# --- Suggested question buttons ---
+suggested_questions = [
+    "Quelle est la procédure pour un arbitrage ?",
+    "La SARL est-elle une société de personnes ou de capitaux ?",
+    "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
+]
 
-    # Events: Enter or click
-    submit.click(fn=generate_answer_stream, inputs=msg, outputs=chatbot)
-    msg.submit(fn=generate_answer_stream, inputs=msg, outputs=chatbot)
+cols = st.columns(len(suggested_questions))
+for i, question in enumerate(suggested_questions):
+    if cols[i].button(question):
+        # Append user question to history
+        st.session_state.chat_history.append(("User", question))
+        # Placeholder for assistant streaming
+        placeholder = st.empty()
+        assistant_text = ""
+        for chunk in generate_answer_stream(question):
+            # chunk = ("Assistant", text)
+            assistant_text += chunk[1]
+            placeholder.markdown(assistant_text)
+        # Append full assistant message
+        st.session_state.chat_history.append(("Assistant", assistant_text))
 
-demo.launch()
+# --- User input ---
+with st.form(key="user_input_form", clear_on_submit=True):
+    user_question = st.text_input("Pose ta question juridique :", "")
+    submit = st.form_submit_button("Répondre")
+
+if submit and user_question.strip():
+    st.session_state.chat_history.append(("User", user_question))
+    placeholder = st.empty()
+    assistant_text = ""
+    for chunk in generate_answer_stream(user_question):
+        assistant_text += chunk[1]
+        placeholder.markdown(assistant_text)
+    st.session_state.chat_history.append(("Assistant", assistant_text))
+
+# --- Display chat history ---
+for speaker, message in st.session_state.chat_history:
+    with st.chat_message(speaker.lower()):
+        st.markdown(message)

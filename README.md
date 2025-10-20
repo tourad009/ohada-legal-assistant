@@ -1,14 +1,4 @@
----
-title: OHADA Legal Assistant
-emoji: 💻
-colorFrom: gray
-colorTo: red
-sdk: gradio
-sdk_version: 5.49.1
-app_file: app.py
-pinned: false
-license: apache-2.0
-short_description: A specialized legal chatbot for OHADA law
----
+# OHADA Legal Assistant
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+A legal assistant specialized in OHADA law.  
+It allows users to ask legal questions and get precise answers based on OHADA legal texts.
