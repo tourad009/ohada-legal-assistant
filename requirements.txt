@@ -1,13 +1,12 @@
 streamlit
 langchain
-langchain_community
-langchain_openai
+langchain-community
+langchain-openai
 langchain-huggingface
 langchain-chroma
 transformers
 sentence-transformers
-zipfile
 chromadb
 python-dotenv
 huggingface_hub
-torch
+torch==2.2.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
