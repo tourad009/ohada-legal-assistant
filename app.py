@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-from rag_pipeline import generate_answer_stream, retriever, rag_chain
+from rag_pipeline import generate_answer_stream, rag_chain
 
 st.set_page_config(page_title="OHADA Legal Assistant", layout="wide")
 
@@ -27,8 +27,8 @@ for i, question in enumerate(suggested_questions):
         st.session_state.chat_history.append(("User", question))
         placeholder = st.empty()
         assistant_text = ""
-        for chunk in generate_answer_stream(question, retriever, rag_chain):
-            assistant_text += chunk
+        for chunk in generate_answer_stream(question, rag_chain):
+            assistant_text = chunk  # Utiliser directement le texte streamé cumulé
             placeholder.markdown(assistant_text)
         st.session_state.chat_history.append(("Assistant", assistant_text))
 
@@ -43,8 +43,8 @@ if submit and user_question.strip():
     st.session_state.chat_history.append(("User", user_question))
     placeholder = st.empty()
     assistant_text = ""
-    for chunk in generate_answer_stream(user_question, retriever, rag_chain):
-        assistant_text += chunk
+    for chunk in generate_answer_stream(user_question, rag_chain):
+        assistant_text = chunk  # Utiliser directement le texte streamé cumulé
         placeholder.markdown(assistant_text)
     st.session_state.chat_history.append(("Assistant", assistant_text))
 

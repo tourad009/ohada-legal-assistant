@@ -52,8 +52,8 @@ def load_vectorstore(local_dir):
         persist_directory=local_dir,
         embedding_function=embedding_model
     )
-    # Debug : vérifier le nombre de collections
-    print(f"🔍 Nombre de collections dans Chroma : {vectorstore._collection.count()}")
+    # Debug : vérifier le nombre de documents
+    print(f"🔍 Nombre de documents dans Chroma : {vectorstore._collection.count()}")
     return vectorstore
 
 # -----------------------------
@@ -88,7 +88,7 @@ def setup_llm():
         base_url="https://openrouter.ai/api/v1",
         model="qwen/qwen-2.5-72b-instruct",
         temperature=0.2,
-        max_completion_tokens=1000
+        max_tokens=1000  # Utilisation de max_tokens au lieu de max_completion_tokens (selon la doc OpenAI-compatible)
     )
     return llm
 
@@ -96,8 +96,11 @@ def setup_llm():
 # 6. Construire la chaîne RAG
 # -----------------------------
 def setup_rag_chain(retriever, prompt, llm):
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
     rag_chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
@@ -107,7 +110,7 @@ def setup_rag_chain(retriever, prompt, llm):
 # -----------------------------
 # 7. Fonction de génération (streaming)
 # -----------------------------
-def generate_answer_stream(question: str, retriever, rag_chain):
+def generate_answer_stream(question: str, rag_chain):
     """
     Génère une réponse au format streaming depuis la chaîne RAG.
     Yields: texte progressif (string)
@@ -117,37 +120,12 @@ def generate_answer_stream(question: str, retriever, rag_chain):
         return
 
     try:
-        # Récupérer les documents depuis le retriever
-        docs = retriever.invoke({"query": question})
-
-        # Filtrer les documents sans page_content ou dont page_content n'est pas une chaîne
-        valid_docs = []
-        for doc in docs:
-            content = getattr(doc, "page_content", None)
-            if content is not None and isinstance(content, str):
-                valid_docs.append(content)
-            else:
-                print(f"Document invalide: {doc}")
-
-        if not valid_docs:
-            yield "Aucun document valide trouvé pour répondre à votre question."
-            return
-
-        context_text = "\n".join(valid_docs)
-        prompt_input = {
-            "question": question,
-            "context": context_text
-        }
-
-        # Streamer la réponse
         streamed_text = ""
-        for chunk in rag_chain.stream(prompt_input):
+        for chunk in rag_chain.stream(question):
             streamed_text += chunk
             yield streamed_text
-
     except Exception as e:
         yield f"Erreur lors de la génération de la réponse : {str(e)}"
-
 
 # -----------------------------
 # Initialisation globale
