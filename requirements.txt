@@ -1,0 +1,9 @@
+gradio
+langchain
+langchain_community
+langchain_openai
+langchain-huggingface
+transformers
+chromadb
+python-dotenv
+huggingface_hub
