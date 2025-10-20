@@ -8,31 +8,39 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
         "<h1 style='color:#1E3A8A; font-family:Inter; font-weight:bold'>Assistant juridique OHADA</h1>"
     )
     
-    chatbot = gr.Chatbot(elem_id="chatbot", label="OHADA Legal Assistant")
+    # Chatbot with modern message format
+    chatbot = gr.Chatbot(
+        label="OHADA Legal Assistant",
+        elem_id="chatbot",
+        type="messages"  # ✅ OpenAI-style format
+    )
     
-    # Suggested prompt buttons
+    # Suggested question buttons
     suggested_questions = [
         "Quelle est la procédure pour un arbitrage ?",
         "La SARL est-elle une société de personnes ou de capitaux ?",
         "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
     ]
-    
+
+    # Create buttons in a row
     with gr.Row():
-        for question in suggested_questions:
-            gr.Button(question).click(
-                generate_answer_stream,
-                inputs=gr.Textbox.update(value=question),
+        for q in suggested_questions:
+            gr.Button(q).click(
+                fn=lambda question=q: list(generate_answer_stream(question)),
                 outputs=chatbot
             )
-    
+
+    # Textbox for user question
     msg = gr.Textbox(
         label="Pose ta question juridique :",
-        placeholder="Ex : Quelle est la procédure pour un arbitrage ?"
+        placeholder="Ex : Quelle est la procédure pour un arbitrage ?",
     )
-    
+
+    # Submit button
     submit = gr.Button("Répondre")
-    
-    submit.click(generate_answer_stream, inputs=msg, outputs=chatbot)
-    msg.submit(generate_answer_stream, inputs=msg, outputs=chatbot)
+
+    # Events: Enter or click
+    submit.click(fn=generate_answer_stream, inputs=msg, outputs=chatbot)
+    msg.submit(fn=generate_answer_stream, inputs=msg, outputs=chatbot)
 
 demo.launch()
