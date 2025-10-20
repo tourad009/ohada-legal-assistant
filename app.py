@@ -53,6 +53,8 @@ st.markdown("""
         margin: 5px;
         cursor: pointer;
         transition: background-color 0.2s;
+        display: inline-block;
+        text-align: center;
     }
     .suggested-button:hover {
         background-color: #e0e0e0;
@@ -76,6 +78,7 @@ st.markdown("""
         border-radius: 20px;
         padding: 8px 16px;
         margin-top: 10px;
+        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -99,8 +102,8 @@ with st.container():
     cols = st.columns(3)
     for i, question in enumerate(suggested_questions):
         with cols[i]:
-            if st.button(question, key=f"sugg_{i}", help="Cliquez pour poser cette question", class_="suggested-button"):
-                user_question = question  # Traiter comme une entrée utilisateur
+            if st.button(question, key=f"sugg_{i}", help="Cliquez pour poser cette question"):
+                st.session_state.user_input = question  # Stocke la question pour traitement
 
     # Conteneur pour le chat avec scroll
     chat_container = st.container()
@@ -113,7 +116,7 @@ with st.container():
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Bouton pour effacer l'historique
-    if st.button("Effacer la conversation", key="clear_chat", class_="clear-button"):
+    if st.button("Effacer la conversation", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
 
