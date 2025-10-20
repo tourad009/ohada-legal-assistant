@@ -19,7 +19,7 @@ vectorstore_path = snapshot_download(
 # 2. Load persistent vectorstore
 # -----------------------------
 embedding_model = HuggingFaceEmbeddings(
-    model_name="Qwen/Qwen3-Embedding-0.6B",
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
     model_kwargs={"device": "cpu"}  # use "cuda" if GPU is available
 )
 
