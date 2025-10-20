@@ -4,7 +4,7 @@ from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableLambda
 from langchain_huggingface import HuggingFaceEmbeddings
 
 # =============================
@@ -96,15 +96,22 @@ llm = ChatOpenAI(
 # =============================
 # 5. Construire la chaîne RAG
 # =============================
+
+# Étape intermédiaire : relier la question au retriever
+def retrieve_context(question: str):
+    docs = retriever.get_relevant_documents(question)
+    context_text = "\n\n".join([d.page_content for d in docs])
+    return {"context": context_text, "question": question}
+
 rag_chain = (
-    {"context": retriever, "question": RunnablePassthrough()} 
+    RunnableLambda(retrieve_context)
     | prompt
     | llm
     | StrOutputParser()
 )
 
 # =============================
-# 6. Fonction de génération (streaming)
+# 6. Fonction de génération
 # =============================
 def generate_answer_stream(question: str):
     """
@@ -116,6 +123,7 @@ def generate_answer_stream(question: str):
         return
 
     streamed_text = ""
-    for chunk in rag_chain.stream({"question": question}):
+    # ✅ On stream directement avec la question (string), pas un dict
+    for chunk in rag_chain.stream(question):
         streamed_text += chunk
         yield streamed_text
