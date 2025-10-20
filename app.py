@@ -2,21 +2,16 @@ import streamlit as st
 from rag_pipeline import generate_answer_stream, retriever, rag_chain
 
 # Configuration basique
-st.set_page_config(
-    page_title="OHADA Legal Assistant",
-    layout="wide"
-)
-
+st.set_page_config(page_title="OHADA Legal Assistant", layout="wide")
 st.title("Assistant Juridique OHADA")
 
 # Initialisation de l'historique
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Affichage de l'historique du chat
+# Affichage de l'historique du chat (sans bulles)
 for speaker, message in st.session_state.chat_history:
-    with st.chat_message(speaker.lower()):
-        st.markdown(message)
+    st.markdown(f"**{speaker}:** {message}")
 
 # Questions suggérées (boutons simples)
 st.subheader("Questions fréquentes")
@@ -30,15 +25,13 @@ cols = st.columns(len(suggested_questions))
 for i, question in enumerate(suggested_questions):
     if cols[i].button(question, use_container_width=True):
         st.session_state.chat_history.append(("User", question))
-        with st.chat_message("user"):
-            st.markdown(question)
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_response = ""
-            for chunk in generate_answer_stream(question, retriever, rag_chain):
-                full_response = chunk
-                placeholder.markdown(full_response)
-            st.session_state.chat_history.append(("Assistant", full_response))
+        st.markdown(f"**User:** {question}")
+        placeholder = st.empty()
+        full_response = ""
+        for chunk in generate_answer_stream(question, retriever, rag_chain):
+            full_response = chunk
+            placeholder.markdown(f"**Assistant:** {full_response}")
+        st.session_state.chat_history.append(("Assistant", full_response))
         st.rerun()
 
 # Zone de saisie utilisateur
@@ -52,14 +45,12 @@ with st.form(key="user_input_form", clear_on_submit=True):
     submit = st.form_submit_button("Envoyer")
 
 if submit and user_question.strip():
-        st.session_state.chat_history.append(("User", user_question))
-        with st.chat_message("user"):
-            st.markdown(user_question)
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_response = ""
-            for chunk in generate_answer_stream(user_question, retriever, rag_chain):
-                full_response = chunk
-                placeholder.markdown(full_response)
-            st.session_state.chat_history.append(("Assistant", full_response))
-        st.rerun()
+    st.session_state.chat_history.append(("User", user_question))
+    st.markdown(f"**User:** {user_question}")
+    placeholder = st.empty()
+    full_response = ""
+    for chunk in generate_answer_stream(user_question, retriever, rag_chain):
+        full_response = chunk
+        placeholder.markdown(f"**Assistant:** {full_response}")
+    st.session_state.chat_history.append(("Assistant", full_response))
+    st.rerun()
