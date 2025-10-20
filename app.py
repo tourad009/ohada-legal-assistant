@@ -1,56 +1,47 @@
 import streamlit as st
 from rag_pipeline import generate_answer_stream, retriever, rag_chain
 
-# Configuration basique
-st.set_page_config(page_title="OHADA Legal Assistant", layout="wide")
+# Configuration sobre
+st.set_page_config(page_title="OHADA Legal Assistant", page_icon="⚖️", layout="centered")
 st.title("Assistant Juridique OHADA")
 
 # Initialisation de l'historique
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Affichage de l'historique du chat (sans bulles)
+# Affichage de l'historique (style sobre)
 for speaker, message in st.session_state.chat_history:
-    st.markdown(f"**{speaker}:** {message}")
+    if speaker == "User":
+        st.write(f"**Vous:** {message}")
+    else:
+        st.write(f"**Assistant:** {message}")
+    st.divider()  # Ligne de séparation discrète
 
-# Questions suggérées (boutons simples)
-st.subheader("Questions fréquentes")
-suggested_questions = [
-    "Quelle est la procédure pour un arbitrage ?",
-    "La SARL est-elle une société de personnes ou de capitaux ?",
-    "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
-]
+# Zone de saisie utilisateur (style minimaliste)
+st.text_input(
+    "Posez votre question juridique...",
+    key="user_question",
+    placeholder="Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?",
+    label_visibility="collapsed"
+)
 
-cols = st.columns(len(suggested_questions))
-for i, question in enumerate(suggested_questions):
-    if cols[i].button(question, use_container_width=True):
-        st.session_state.chat_history.append(("User", question))
-        st.markdown(f"**User:** {question}")
-        placeholder = st.empty()
-        full_response = ""
-        for chunk in generate_answer_stream(question, retriever, rag_chain):
-            full_response = chunk
-            placeholder.markdown(f"**Assistant:** {full_response}")
-        st.session_state.chat_history.append(("Assistant", full_response))
+# Bouton d'envoi sobre
+if st.button("Envoyer", type="primary"):
+    if st.session_state.user_question.strip():
+        user_question = st.session_state.user_question
+        st.session_state.chat_history.append(("User", user_question))
         st.rerun()
 
-# Zone de saisie utilisateur
-st.subheader("Posez votre question")
-with st.form(key="user_input_form", clear_on_submit=True):
-    user_question = st.text_input(
-        "Votre question juridique :",
-        placeholder="Ex: Quelles sont les étapes pour créer une SARL ?",
-        label_visibility="collapsed"
-    )
-    submit = st.form_submit_button("Envoyer")
+        # Affichage de la question utilisateur
+        st.write(f"**Vous:** {user_question}")
 
-if submit and user_question.strip():
-    st.session_state.chat_history.append(("User", user_question))
-    st.markdown(f"**User:** {user_question}")
-    placeholder = st.empty()
-    full_response = ""
-    for chunk in generate_answer_stream(user_question, retriever, rag_chain):
-        full_response = chunk
-        placeholder.markdown(f"**Assistant:** {full_response}")
-    st.session_state.chat_history.append(("Assistant", full_response))
-    st.rerun()
+        # Génération de la réponse
+        placeholder = st.empty()
+        full_response = ""
+        for chunk in generate_answer_stream(user_question, retriever, rag_chain):
+            full_response = chunk
+            placeholder.write(f"**Assistant:** {full_response}")
+
+        # Ajout à l'historique
+        st.session_state.chat_history.append(("Assistant", full_response))
+        st.rerun()
