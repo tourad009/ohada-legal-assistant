@@ -20,7 +20,7 @@ vectorstore_path = snapshot_download(
 # -----------------------------
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"}  # use "cuda" if GPU is available
+    model_kwargs={"device": "cpu"}
 )
 
 vectorstore = Chroma(
