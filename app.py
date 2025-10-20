@@ -1,6 +1,5 @@
-# app.py
 import streamlit as st
-from rag_pipeline import generate_answer_stream, rag_chain
+from rag_pipeline import generate_answer_stream, retriever, rag_chain
 
 # Configuration de la page
 st.set_page_config(
@@ -9,11 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialisation de l'historique du chat
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-# CSS pour un design moderne : messages alignés, bulles colorées
+# CSS pour un design moderne
 st.markdown("""
 <style>
     .stChatMessage {
@@ -55,6 +50,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Initialisation de l'historique du chat
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
 # Header
 st.title("OhadAI ⚖️")
 st.subheader("Votre assistant juridique spécialisé en droit OHADA")
@@ -70,10 +69,9 @@ cols = st.columns(3)
 for i, question in enumerate(suggested_questions):
     with cols[i]:
         if st.button(question, key=f"sugg_{i}"):
-            user_question = question  # Traiter comme une entrée utilisateur
-            # Le traitement se fera dans le bloc if ci-dessous
+            st.session_state.user_input = question  # Stocke la question pour traitement
 
-# Conteneur pour le chat avec scroll (hauteur réduite à 400px)
+# Conteneur pour le chat avec scroll
 chat_container = st.container(height=400)
 
 # Affichage de l'historique du chat
@@ -83,40 +81,43 @@ with chat_container:
         with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
             st.markdown(message)
 
-# JavaScript pour auto-scroll avec MutationObserver
+# Entrée utilisateur
+user_question = st.chat_input(
+    placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
+) or st.session_state.get("user_input", "")
+
+# Traitement de la question
+if user_question and user_question.strip():
+    # Ajouter la question de l'utilisateur à l'historique
+    st.session_state.chat_history.append(("User", user_question))
+
+    # Afficher le message de l'utilisateur
+    with chat_container:
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(user_question)
+
+    # Générer et afficher la réponse en streaming
+    with chat_container:
+        with st.chat_message("assistant", avatar="🤖"):
+            placeholder = st.empty()
+            full_response = ""
+            for chunk in generate_answer_stream(user_question, retriever, rag_chain):
+                full_response += chunk
+                placeholder.markdown(full_response)
+
+    # Ajouter la réponse complète à l'historique
+    st.session_state.chat_history.append(("Assistant", full_response))
+
+    # Réinitialiser l'entrée utilisateur
+    st.session_state.user_input = ""
+    st.rerun()  # Rafraîchir une seule fois après la réponse complète
+
+# JavaScript pour auto-scroll
 st.markdown("""
 <script>
     const targetNode = window.parent.document.querySelector('section[data-testid="stContainerWithHeight"]');
     if (targetNode) {
-        const config = { attributes: true, childList: true, subtree: true };
-        const callback = function(mutationsList, observer) {
-            targetNode.scrollTop = targetNode.scrollHeight;
-        };
-        const observer = new MutationObserver(callback);
-        observer.observe(targetNode, config);
+        targetNode.scrollTop = targetNode.scrollHeight;
     }
 </script>
 """, unsafe_allow_html=True)
-
-# Entrée utilisateur avec st.chat_input
-user_question = st.chat_input(
-    placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
-)
-
-# Traitement de la question (y compris des suggestions)
-if user_question and user_question.strip():
-    # Ajouter la question de l'utilisateur à l'historique
-    st.session_state.chat_history.append(("User", user_question))
-    
-    # Afficher le message de l'utilisateur dans le conteneur
-    with chat_container:
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(user_question)
-    
-    # Générer et afficher la réponse en streaming
-    with chat_container:
-        with st.chat_message("assistant", avatar="🤖"):
-            full_response = st.write_stream(generate_answer_stream(user_question, rag_chain))
-    
-    # Ajouter la réponse complète à l'historique
-    st.session_state.chat_history.append(("Assistant", full_response))
