@@ -12,85 +12,102 @@ from langchain_core.runnables import RunnablePassthrough
 # -----------------------------
 # 1. Télécharger et dézipper la base vectorielle
 # -----------------------------
-local_dir = "ohada_vectorstore"
-repo_dir = snapshot_download(
-    repo_id="TouradAi/ohada-vectorstore",
-    repo_type="dataset"
-)
+def setup_vectorstore():
+    local_dir = "ohada_vectorstore"
+    repo_dir = snapshot_download(
+        repo_id="TouradAi/ohada-vectorstore",
+        repo_type="dataset"
+    )
+    # Recherche du zip
+    zip_path = None
+    for f in os.listdir(repo_dir):
+        if f.endswith(".zip"):
+            zip_path = os.path.join(repo_dir, f)
+            break
+    if not zip_path:
+        raise FileNotFoundError(f"Aucun fichier .zip trouvé dans {repo_dir}")
 
-# Recherche du zip
-zip_path = None
-for f in os.listdir(repo_dir):
-    if f.endswith(".zip"):
-        zip_path = os.path.join(repo_dir, f)
-        break
+    # Décompression
+    os.makedirs(local_dir, exist_ok=True)
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(local_dir)
 
-if not zip_path:
-    raise FileNotFoundError(f"Aucun fichier .zip trouvé dans {repo_dir}")
+    # Debug : afficher le contenu extrait
+    print(f"✅ Contenu extrait dans {local_dir}:")
+    for root, dirs, files in os.walk(local_dir):
+        for file in files:
+            print(f"  - {os.path.join(root, file)}")
 
-# Décompression
-os.makedirs(local_dir, exist_ok=True)
-with zipfile.ZipFile(zip_path, "r") as zip_ref:
-    zip_ref.extractall(local_dir)
-
-print(f"✅ Base vectorielle extraite dans : {local_dir}")
+    return local_dir
 
 # -----------------------------
 # 2. Charger la base vectorielle
 # -----------------------------
-embedding_model = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"}
-)
-
-vectorstore = Chroma(
-    persist_directory=local_dir,
-    embedding_function=embedding_model
-)
-
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-
-# -----------------------------
-# 3. Prompt OHADA
-# -----------------------------
-prompt = ChatPromptTemplate.from_template("""
-### CONTEXTE JURIDIQUE OHADA
-Tu es un assistant juridique expert en droit OHADA.
-Ta mission : répondre aux questions juridiques posées par des personnes non expertes,
-en reformulant la question dans un langage juridique précis et en y répondant sur la base exclusive du contexte fourni.
-
-### QUESTION
-{question}
-
-### CONTEXTE
-{context}
-""")
+def load_vectorstore(local_dir):
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"}
+    )
+    vectorstore = Chroma(
+        persist_directory=local_dir,
+        embedding_function=embedding_model
+    )
+    # Debug : vérifier le nombre de collections
+    print(f"🔍 Nombre de collections dans Chroma : {vectorstore._collection.count()}")
+    return vectorstore
 
 # -----------------------------
-# 4. LLM via OpenRouter
+# 3. Initialisation du retriever
 # -----------------------------
-llm = ChatOpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
-    model="qwen/qwen-2.5-72b-instruct",
-    temperature=0.2,
-    max_completion_tokens=1000
-)
+def setup_retriever(vectorstore):
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    return retriever
 
 # -----------------------------
-# 5. Construire la chaîne RAG
+# 4. Prompt OHADA
 # -----------------------------
-rag_chain = (
-    {"context": retriever, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
+def setup_prompt():
+    prompt = ChatPromptTemplate.from_template("""
+    ### CONTEXTE JURIDIQUE OHADA
+    Tu es un assistant juridique expert en droit OHADA.
+    Ta mission : répondre aux questions juridiques posées par des personnes non expertes,
+    en reformulant la question dans un langage juridique précis et en y répondant sur la base exclusive du contexte fourni.
+    ### QUESTION
+    {question}
+    ### CONTEXTE
+    {context}
+    """)
+    return prompt
 
 # -----------------------------
-# 6. Fonction de génération (streaming)
+# 5. LLM via OpenRouter
 # -----------------------------
-def generate_answer_stream(question: str):
+def setup_llm():
+    llm = ChatOpenAI(
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        base_url="https://openrouter.ai/api/v1",
+        model="qwen/qwen-2.5-72b-instruct",
+        temperature=0.2,
+        max_completion_tokens=1000
+    )
+    return llm
+
+# -----------------------------
+# 6. Construire la chaîne RAG
+# -----------------------------
+def setup_rag_chain(retriever, prompt, llm):
+    rag_chain = (
+        {"context": retriever, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+    return rag_chain
+
+# -----------------------------
+# 7. Fonction de génération (streaming)
+# -----------------------------
+def generate_answer_stream(question: str, retriever, rag_chain):
     """
     Génère une réponse au format streaming depuis la chaîne RAG.
     Yields: texte progressif (string)
@@ -99,19 +116,36 @@ def generate_answer_stream(question: str):
         yield "Veuillez poser une question."
         return
 
-    # Récupérer les documents depuis le retriever
-    docs = retriever.invoke({"query": question})
-    
-    context_text = "\n".join([getattr(doc, "page_content", str(doc)) for doc in docs])
+    try:
+        # Récupérer les documents depuis le retriever
+        docs = retriever.invoke({"query": question})
+        docs = [doc for doc in docs if getattr(doc, "page_content", None) is not None]
 
-    # Préparer le prompt avec le contexte
-    prompt_input = {
-        "question": question,
-        "context": context_text
-    }
+        if not docs:
+            yield "Aucun document pertinent trouvé."
+            return
 
-    # Streamer la réponse
-    streamed_text = ""
-    for chunk in rag_chain.stream(prompt_input):
-        streamed_text += chunk
-        yield streamed_text
+        context_text = "\n".join([getattr(doc, "page_content", "") for doc in docs])
+        prompt_input = {
+            "question": question,
+            "context": context_text
+        }
+
+        # Streamer la réponse
+        streamed_text = ""
+        for chunk in rag_chain.stream(prompt_input):
+            streamed_text += chunk
+            yield streamed_text
+
+    except Exception as e:
+        yield f"Erreur lors de la génération de la réponse : {str(e)}"
+
+# -----------------------------
+# Initialisation globale
+# -----------------------------
+local_dir = setup_vectorstore()
+vectorstore = load_vectorstore(local_dir)
+retriever = setup_retriever(vectorstore)
+prompt = setup_prompt()
+llm = setup_llm()
+rag_chain = setup_rag_chain(retriever, prompt, llm)
