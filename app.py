@@ -101,7 +101,7 @@ if user_question and user_question.strip():
         with st.chat_message("assistant", avatar="🤖"):
             placeholder = st.empty()
             full_response = ""
-            for chunk in generate_answer_stream(user_question, retriever, rag_chain):
+            for chunk in generate_answer_stream(user_question, retriever, rag_chain):  # Appel corrigé
                 full_response += chunk
                 placeholder.markdown(full_response)
 
