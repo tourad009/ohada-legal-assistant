@@ -7,21 +7,32 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-# --- Download vectorstore from Hugging Face dataset ---
+# -----------------------------
+# 1. Download vectorstore from Hugging Face dataset
+# -----------------------------
 vectorstore_path = snapshot_download(
     repo_id="TouradAi/ohada-vectorstore",
     repo_type="dataset"
 )
 
-# --- Load persistent vectorstore ---
+# -----------------------------
+# 2. Load persistent vectorstore
+# -----------------------------
 embedding_model = HuggingFaceEmbeddings(
     model_name="Qwen/Qwen3-Embedding-0.6B",
-    model_kwargs={"device": "cpu"}
+    model_kwargs={"device": "cpu"}  # use "cuda" if GPU is available
 )
-vectorstore = Chroma(persist_directory=vectorstore_path, embedding_function=embedding_model)
+
+vectorstore = Chroma(
+    persist_directory=vectorstore_path,
+    embedding_function=embedding_model
+)
+
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# --- OHADA legal prompt ---
+# -----------------------------
+# 3. OHADA legal prompt template
+# -----------------------------
 prompt = ChatPromptTemplate.from_template("""
 ### CONTEXTE JURIDIQUE OHADA
 Tu es un assistant juridique expert en droit OHADA.
@@ -71,7 +82,9 @@ en reformulant la question dans un langage juridique précis et en y répondant 
 {question}
 """)
 
-# --- LLM via OpenRouter API ---
+# -----------------------------
+# 4. Initialize LLM via OpenRouter API
+# -----------------------------
 llm = ChatOpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
@@ -80,7 +93,9 @@ llm = ChatOpenAI(
     max_completion_tokens=1000
 )
 
-# --- RAG chain setup ---
+# -----------------------------
+# 5. Setup RAG chain
+# -----------------------------
 rag_chain = (
     {"context": retriever, "question": RunnablePassthrough()}
     | prompt
@@ -88,10 +103,13 @@ rag_chain = (
     | StrOutputParser()
 )
 
-# --- Function to stream the answer chunk by chunk ---
-def generate_answer_stream(question):
+# -----------------------------
+# 6. Function to stream the answer chunk by chunk
+# -----------------------------
+def generate_answer_stream(question: str):
     """
     Stream the answer from the RAG chain for Gradio Chatbot.
+    Yields tuples (role, message) for incremental display.
     """
     if not question.strip():
         yield ("User", "Veuillez poser une question.")
