@@ -1,4 +1,3 @@
-# rag_pipeline.py
 import os
 import zipfile
 from huggingface_hub import snapshot_download
@@ -88,7 +87,7 @@ def setup_llm():
         base_url="https://openrouter.ai/api/v1",
         model="qwen/qwen-2.5-72b-instruct",
         temperature=0.2,
-        max_tokens=1000  # Utilisation de max_tokens au lieu de max_completion_tokens (selon la doc OpenAI-compatible)
+        max_tokens=1000
     )
     return llm
 

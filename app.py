@@ -8,12 +8,20 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS pour un design moderne
+# Initialisation de l'historique du chat
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+# CSS pour un design moderne et conversationnel
 st.markdown("""
 <style>
+    .main-container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
     .stChatMessage {
-        display: flex;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     .stChatMessage.user {
         flex-direction: row-reverse;
@@ -26,7 +34,8 @@ st.markdown("""
     .stChatMessage .stMarkdown {
         padding: 12px;
         border-radius: 12px;
-        max-width: 70%;
+        max-width: 75%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .stChatMessage.user .stMarkdown {
         background-color: #DCF8C6;
@@ -43,81 +52,102 @@ st.markdown("""
         padding: 8px 16px;
         margin: 5px;
         cursor: pointer;
+        transition: background-color 0.2s;
     }
     .suggested-button:hover {
         background-color: #e0e0e0;
     }
+    .chat-container {
+        max-height: 450px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        background-color: #fafafa;
+    }
+    .stChatInput input {
+        border-radius: 8px;
+        padding: 10px;
+    }
+    .clear-button {
+        background-color: #ff4b4b;
+        color: white;
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin-top: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Initialisation de l'historique du chat
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# Conteneur principal
+with st.container():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# Header
-st.title("OhadAI ⚖️")
-st.subheader("Votre assistant juridique spécialisé en droit OHADA")
-st.markdown("Posez vos questions juridiques et obtenez des réponses précises basées sur les textes OHADA.")
+    # Header
+    st.title("OhadAI ⚖️")
+    st.subheader("Assistant Juridique OHADA")
+    st.markdown("Posez vos questions juridiques et obtenez des réponses précises basées sur les textes OHADA.")
 
-# Boutons de questions suggérées
-suggested_questions = [
-    "Quelle est la procédure pour un arbitrage ?",
-    "La SARL est-elle une société de personnes ou de capitaux ?",
-    "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
-]
-cols = st.columns(3)
-for i, question in enumerate(suggested_questions):
-    with cols[i]:
-        if st.button(question, key=f"sugg_{i}"):
-            st.session_state.user_input = question  # Stocke la question pour traitement
+    # Boutons de questions suggérées
+    st.markdown("### Questions fréquentes")
+    suggested_questions = [
+        "Quelle est la procédure pour un arbitrage ?",
+        "La SARL est-elle une société de personnes ou de capitaux ?",
+        "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
+    ]
+    cols = st.columns(3)
+    for i, question in enumerate(suggested_questions):
+        with cols[i]:
+            if st.button(question, key=f"sugg_{i}", help="Cliquez pour poser cette question", class_="suggested-button"):
+                user_question = question  # Traiter comme une entrée utilisateur
 
-# Conteneur pour le chat avec scroll
-chat_container = st.container(height=400)
-
-# Affichage de l'historique du chat
-with chat_container:
-    for speaker, message in st.session_state.chat_history:
-        role = "user" if speaker == "User" else "assistant"
-        with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
-            st.markdown(message)
-
-# Entrée utilisateur
-user_question = st.chat_input(
-    placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
-) or st.session_state.get("user_input", "")
-
-# Traitement de la question
-if user_question and user_question.strip():
-    # Ajouter la question de l'utilisateur à l'historique
-    st.session_state.chat_history.append(("User", user_question))
-
-    # Afficher le message de l'utilisateur
+    # Conteneur pour le chat avec scroll
+    chat_container = st.container()
     with chat_container:
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(user_question)
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        for speaker, message in st.session_state.chat_history:
+            role = "user" if speaker == "User" else "assistant"
+            with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
+                st.markdown(message)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # Générer et afficher la réponse en streaming
-    with chat_container:
-        with st.chat_message("assistant", avatar="🤖"):
-            placeholder = st.empty()
-            full_response = ""
-            for chunk in generate_answer_stream(user_question, rag_chain):
-                full_response += chunk
-                placeholder.markdown(full_response)
+    # Bouton pour effacer l'historique
+    if st.button("Effacer la conversation", key="clear_chat", class_="clear-button"):
+        st.session_state.chat_history = []
+        st.rerun()
 
-    # Ajouter la réponse complète à l'historique
-    st.session_state.chat_history.append(("Assistant", full_response))
+    # Entrée utilisateur
+    user_question = st.chat_input(
+        placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
+    ) or st.session_state.get("user_input", "")
 
-    # Réinitialiser l'entrée utilisateur
-    st.session_state.user_input = ""
-    st.rerun()  # Rafraîchir une seule fois après la réponse complète
+    # Traitement de la question
+    if user_question and user_question.strip():
+        # Ajouter la question à l'historique
+        st.session_state.chat_history.append(("User", user_question))
+        with chat_container:
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(user_question)
+            with st.chat_message("assistant", avatar="🤖"):
+                placeholder = st.empty()
+                full_response = ""
+                for chunk in generate_answer_stream(user_question, rag_chain):
+                    full_response = chunk  # Remplacez, car le générateur envoie le texte cumulé
+                    placeholder.markdown(full_response)
+                st.session_state.chat_history.append(("Assistant", full_response))
 
-# JavaScript pour auto-scroll
-st.markdown("""
-<script>
-    const targetNode = window.parent.document.querySelector('section[data-testid="stContainerWithHeight"]');
-    if (targetNode) {
-        targetNode.scrollTop = targetNode.scrollHeight;
-    }
-</script>
-""", unsafe_allow_html=True)
+        # Réinitialiser l'entrée utilisateur
+        st.session_state.user_input = ""
+
+    # JavaScript pour auto-scroll
+    st.markdown("""
+    <script>
+        const targetNode = window.parent.document.querySelector('section[data-testid="stContainerWithHeight"]');
+        if (targetNode) {
+            targetNode.scrollTop = targetNode.scrollHeight;
+        }
+    </script>
+    """, unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
