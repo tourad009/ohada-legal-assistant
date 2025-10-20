@@ -7,3 +7,4 @@ transformers
 chromadb
 python-dotenv
 huggingface_hub
+torch
