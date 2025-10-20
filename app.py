@@ -56,11 +56,10 @@ st.markdown("""
 # Affichage de l'historique avec scroll
 with st.container():
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    for message in st.session_state.chat_history:
-        role, content = message["role"], message["content"]
-        icon = "👤" if role == "user" else "🤖"
-        style = "chat-user" if role == "user" else "chat-bot"
-        st.markdown(f'<div class="chat-message {style}"><span class="icon">{icon}</span>{content}</div>', unsafe_allow_html=True)
+    for speaker, message in st.session_state.chat_history:
+        style = "chat-user" if speaker == "User" else "chat-bot"
+        icon = "👤" if speaker == "User" else "🤖"
+        st.markdown(f'<div class="chat-message {style}"><span class="icon">{icon}</span>{message}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Entrée utilisateur
@@ -73,13 +72,13 @@ user_input = st.text_input(
 # Traitement de la question
 if user_input and user_input.strip():
     # Ajouter la question à l'historique
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    st.session_state.chat_history.append(("User", user_input))
     with st.chat_message("assistant"):
         response = ""
         for chunk in generate_answer_stream(user_input, rag_chain):
             response += chunk
             st.markdown(f'<div class="chat-message chat-bot"><span class="icon">🤖</span>{response}</div>', unsafe_allow_html=True)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
+        st.session_state.chat_history.append(("Assistant", response))
     # Reset input et rafraîchir
     st.session_state.user_input = ""
     st.rerun()
