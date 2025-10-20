@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from rag_pipeline import generate_answer_stream, rag_chain
 
@@ -5,80 +6,65 @@ from rag_pipeline import generate_answer_stream, rag_chain
 st.set_page_config(
     page_title="OHADA Legal Assistant",
     page_icon="⚖️",
-    layout="centered"
+    layout="wide"
 )
 
-# Initialisation de l'historique
+# Initialisation de l'historique du chat
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# CSS pour un style moderne et épuré
+# CSS pour styliser les messages de chat
 st.markdown("""
 <style>
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-.chat-message {
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    max-width: 80%;
-}
-.chat-user {
-    background-color: #E0F7FA;
-}
-.chat-bot {
-    background-color: #F5F5F5;
-}
-.icon {
-    margin-right: 8px;
-}
-.chat-container {
-    max-height: 500px;
-    overflow-y: auto;
-    margin-bottom: 20px;
-}
-.stTextInput input {
-    border-radius: 8px;
-    padding: 10px;
-}
+    div.stMarkdown > div {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .stChatMessage.user div {
+        background-color: #DCF8C6;
+    }
+    .stChatMessage.assistant div {
+        background-color: #E3F2FD;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown("""
-<div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="font-size: 2.2em;">OhadAI ⚖️</h1>
-    <p style="color: #666;">Votre assistant juridique spécialisé en droit OHADA</p>
-</div>
-""", unsafe_allow_html=True)
+st.title("OhadAI ⚖️")
+st.subheader("Votre assistant juridique spécialisé en droit OHADA")
+st.markdown("Posez vos questions juridiques et obtenez des réponses précises basées sur les textes OHADA.")
 
-# Affichage de l'historique avec scroll
-with st.container():
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+# Affichage de l'historique du chat
+chat_container = st.container(height=500)
+with chat_container:
     for speaker, message in st.session_state.chat_history:
-        style = "chat-user" if speaker == "User" else "chat-bot"
-        icon = "👤" if speaker == "User" else "🤖"
-        st.markdown(f'<div class="chat-message {style}"><span class="icon">{icon}</span>{message}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        role = "user" if speaker == "User" else "assistant"
+        with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
+            st.markdown(message)
 
-# Entrée utilisateur
-user_input = st.text_input(
-    "Posez votre question juridique...",
-    placeholder="Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?",
-    key="user_input"
+# Entrée utilisateur avec st.chat_input
+user_question = st.chat_input(
+    placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
 )
 
 # Traitement de la question
-if user_input and user_input.strip():
-    # Ajouter la question à l'historique
-    st.session_state.chat_history.append(("User", user_input))
-    with st.chat_message("assistant"):
-        response = ""
-        for chunk in generate_answer_stream(user_input, rag_chain):
-            response += chunk
-            st.markdown(f'<div class="chat-message chat-bot"><span class="icon">🤖</span>{response}</div>', unsafe_allow_html=True)
-        st.session_state.chat_history.append(("Assistant", response))
-    # Reset input et rafraîchir
-    st.session_state.user_input = ""
-    st.rerun()
+if user_question and user_question.strip():
+    # Ajouter la question de l'utilisateur à l'historique
+    st.session_state.chat_history.append(("User", user_question))
+    
+    # Afficher le message de l'utilisateur
+    with chat_container:
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(user_question)
+    
+    # Générer et afficher la réponse en streaming
+    with chat_container:
+        with st.chat_message("assistant", avatar="🤖"):
+            message_placeholder = st.empty()
+            full_response = ""
+            for chunk in generate_answer_stream(user_question, rag_chain):
+                full_response += chunk
+                message_placeholder.markdown(full_response)
+    
+    # Ajouter la réponse complète à l'historique
+    st.session_state.chat_history.append(("Assistant", full_response))
