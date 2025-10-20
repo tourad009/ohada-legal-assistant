@@ -1,5 +1,5 @@
 import streamlit as st
-from rag_pipeline import generate_answer_stream, retriever, rag_chain
+from rag_pipeline import generate_answer_stream, rag_chain
 
 # Configuration de la page
 st.set_page_config(
@@ -101,7 +101,7 @@ if user_question and user_question.strip():
         with st.chat_message("assistant", avatar="🤖"):
             placeholder = st.empty()
             full_response = ""
-            for chunk in generate_answer_stream(user_question, retriever, rag_chain):  # Appel corrigé
+            for chunk in generate_answer_stream(user_question, rag_chain):
                 full_response += chunk
                 placeholder.markdown(full_response)
 
