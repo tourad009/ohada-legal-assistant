@@ -6,6 +6,7 @@ langchain-huggingface
 langchain-chroma
 transformers
 sentence-transformers
+zipfile
 chromadb
 python-dotenv
 huggingface_hub
