@@ -1,15 +1,23 @@
 import streamlit as st
 from rag_pipeline import generate_answer_stream
 
-st.set_page_config(page_title="OHADA Legal Assistant", layout="wide")
+# =========================
+# Configuration de la page
+# =========================
+st.set_page_config(page_title="Assistant juridique OHADA", layout="wide")
 
-# --- Initialize chat history ---
+st.title("⚖️ Assistant juridique OHADA")
+
+# =========================
+# Initialisation de l’historique
+# =========================
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-st.title("Assistant juridique OHADA")
-
-# --- Suggested question buttons ---
+# =========================
+# Suggestions de questions
+# =========================
+st.subheader("💬 Suggestions de questions")
 suggested_questions = [
     "Quelle est la procédure pour un arbitrage ?",
     "La SARL est-elle une société de personnes ou de capitaux ?",
@@ -19,33 +27,37 @@ suggested_questions = [
 cols = st.columns(len(suggested_questions))
 for i, question in enumerate(suggested_questions):
     if cols[i].button(question):
-        # Append user question to history
-        st.session_state.chat_history.append(("User", question))
-        # Placeholder for assistant streaming
+        st.session_state.chat_history.append(("user", question))
         placeholder = st.empty()
-        assistant_text = ""
+        response_text = ""
         for chunk in generate_answer_stream(question):
-            # chunk = ("Assistant", text)
-            assistant_text += chunk[1]
-            placeholder.markdown(assistant_text)
-        # Append full assistant message
-        st.session_state.chat_history.append(("Assistant", assistant_text))
+            response_text = chunk 
+            placeholder.markdown(response_text)
+        st.session_state.chat_history.append(("assistant", response_text))
 
-# --- User input ---
-with st.form(key="user_input_form", clear_on_submit=True):
-    user_question = st.text_input("Pose ta question juridique :", "")
-    submit = st.form_submit_button("Répondre")
+# =========================
+# Zone d’entrée utilisateur
+# =========================
+st.subheader("🧾 Pose ta question juridique :")
+user_question = st.text_input(
+    "Ta question :", placeholder="Ex : Quelle est la procédure pour un arbitrage ?"
+)
 
-if submit and user_question.strip():
-    st.session_state.chat_history.append(("User", user_question))
+if st.button("Répondre") and user_question.strip():
+    st.session_state.chat_history.append(("user", user_question))
     placeholder = st.empty()
-    assistant_text = ""
+    response_text = ""
     for chunk in generate_answer_stream(user_question):
-        assistant_text += chunk[1]
-        placeholder.markdown(assistant_text)
-    st.session_state.chat_history.append(("Assistant", assistant_text))
+        response_text = chunk
+        placeholder.markdown(response_text)
+    st.session_state.chat_history.append(("assistant", response_text))
 
-# --- Display chat history ---
-for speaker, message in st.session_state.chat_history:
-    with st.chat_message(speaker.lower()):
-        st.markdown(message)
+# =========================
+# Affichage de l’historique complet
+# =========================
+st.divider()
+st.subheader("🗂️ Historique de la conversation")
+
+for role, content in st.session_state.chat_history:
+    with st.chat_message(role):
+        st.markdown(content)

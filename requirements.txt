@@ -3,6 +3,7 @@ langchain
 langchain_community
 langchain_openai
 langchain-huggingface
+langchain-chroma
 transformers
 sentence-transformers
 chromadb

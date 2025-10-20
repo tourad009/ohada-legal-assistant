@@ -1,23 +1,22 @@
 import os
 from huggingface_hub import snapshot_download
-from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma  
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-# -----------------------------
-# 1. Download vectorstore from Hugging Face dataset
-# -----------------------------
+# =============================
+# 1. Télécharger la base vectorielle depuis Hugging Face
+# =============================
 vectorstore_path = snapshot_download(
     repo_id="TouradAi/ohada-vectorstore",
     repo_type="dataset"
 )
 
-# -----------------------------
-# 2. Load persistent vectorstore
-# -----------------------------
+# =============================
+# 2. Charger les embeddings et le vecteur store
+# =============================
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
     model_kwargs={"device": "cpu"}
@@ -30,9 +29,9 @@ vectorstore = Chroma(
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# -----------------------------
-# 3. OHADA legal prompt template
-# -----------------------------
+# =============================
+# 3. Définition du prompt OHADA
+# =============================
 prompt = ChatPromptTemplate.from_template("""
 ### CONTEXTE JURIDIQUE OHADA
 Tu es un assistant juridique expert en droit OHADA.
@@ -51,27 +50,27 @@ en reformulant la question dans un langage juridique précis et en y répondant 
 
 ### INSTRUCTIONS STRICTES
 1. Qualification juridique :
-- Reformule la question dans un langage juridique clair.
-- Identifie le problème de droit précis posé.
+   - Reformule la question dans un langage juridique clair.
+   - Identifie le problème de droit précis posé.
 
 2. Analyse juridique :
-- Cite mot pour mot les articles applicables du contexte.
-- Mentionne le document OHADA exact dont ils sont issus.
-- Applique un raisonnement syllogistique :
-    - Majeure : règle de droit extraite du texte
-    - Mineure : situation ou faits supposés
-    - Conclusion : solution juridique concrète
+   - Cite mot pour mot les articles applicables du contexte.
+   - Mentionne le document OHADA exact dont ils sont issus.
+   - Applique un raisonnement syllogistique :
+     - Majeure : règle de droit extraite du texte
+     - Mineure : situation ou faits supposés
+     - Conclusion : solution juridique concrète
 
 3. Synthèse vulgarisée :
-- Fournis une réponse claire et accessible à un non-juriste.
-- Résume la solution en une phrase simple à la fin.
+   - Fournis une réponse claire et accessible à un non-juriste.
+   - Résume la solution en une phrase simple à la fin.
 
 4. Format de sortie :
-- La réponse doit être un texte fluide et complet.
-- À la fin, cite les articles exacts et le document OHADA utilisé.
-- Ne jamais inventer d’article ni de document.
-- Si le texte exact n’est pas dans le contexte, indique "(extrait)".
-- Langue : français juridique clair et précis.
+   - La réponse doit être un texte fluide et complet.
+   - À la fin, cite les articles exacts et le document OHADA utilisé.
+   - Ne jamais inventer d’article ni de document.
+   - Si le texte exact n’est pas dans le contexte, indique "(extrait)".
+   - Langue : français juridique clair et précis.
 
 ---
 
@@ -82,40 +81,40 @@ en reformulant la question dans un langage juridique précis et en y répondant 
 {question}
 """)
 
-# -----------------------------
-# 4. Initialize LLM via OpenRouter API
-# -----------------------------
+# =============================
+# 4. Initialiser le LLM (OpenRouter)
+# =============================
 llm = ChatOpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
     model="qwen/qwen-2.5-72b-instruct",
     temperature=0.2,
-    max_completion_tokens=1000
+    max_completion_tokens=1000,
 )
 
-# -----------------------------
-# 5. Setup RAG chain
-# -----------------------------
+# =============================
+# 5. Construire la chaîne RAG
+# =============================
 rag_chain = (
-    {"context": retriever, "question": RunnablePassthrough()}
+    {"context": retriever, "question": RunnablePassthrough()} 
     | prompt
     | llm
     | StrOutputParser()
 )
 
-# -----------------------------
-# 6. Function to stream the answer chunk by chunk
-# -----------------------------
+# =============================
+# 6. Fonction de génération (streaming)
+# =============================
 def generate_answer_stream(question: str):
     """
-    Stream the answer from the RAG chain for Gradio Chatbot.
-    Yields tuples (role, message) for incremental display.
+    Génère une réponse au format streaming depuis la chaîne RAG.
+    Yields: texte progressif (string)
     """
     if not question.strip():
-        yield ("User", "Veuillez poser une question.")
+        yield "Veuillez poser une question."
         return
 
     streamed_text = ""
-    for chunk in rag_chain.stream({"context": retriever, "question": question}):
+    for chunk in rag_chain.stream({"question": question}):
         streamed_text += chunk
-        yield ("Assistant", streamed_text)
+        yield streamed_text
