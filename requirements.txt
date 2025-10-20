@@ -4,6 +4,7 @@ langchain_community
 langchain_openai
 langchain-huggingface
 transformers
+sentence-transformers
 chromadb
 python-dotenv
 huggingface_hub
