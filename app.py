@@ -12,7 +12,7 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS AMÉLIORÉ AVEC SUGGESTIONS CORRIGÉES
+# CSS OPTIMISÉ POUR LA HAUTEUR
 # -----------------------------
 st.markdown("""
 <style>
@@ -24,7 +24,6 @@ st.markdown("""
     --text: #1A202C;
     --text-light: #4A5568;
     --border: #E2E8F0;
-    --hover: #F7FAFC;
     --user-bg: #F7FAFC;
     --assistant-bg: #FFFFFF;
 }
@@ -38,7 +37,7 @@ html, body, [data-testid="stAppViewContainer"] {
     color: var(--text);
 }
 
-/* Conteneur principal */
+/* Conteneur principal optimisé */
 .main {
     display: flex;
     flex-direction: column;
@@ -46,46 +45,43 @@ html, body, [data-testid="stAppViewContainer"] {
     max-width: 900px;
     margin: 0 auto;
     padding: 0;
+    overflow: hidden;
 }
 
-/* En-tête amélioré */
+/* En-tête compact */
 .header {
     text-align: center;
-    padding: 1rem 0 0.8rem 0;
+    padding: 0.7rem 0 0.5rem 0;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
 }
 
 .header h1 {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
     margin: 0;
     color: var(--text);
     font-weight: 600;
 }
 
 .header p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-light);
-    margin: 0.3rem 0 0 0;
+    margin: 0.2rem 0 0 0;
 }
 
-/* Bouton effacer redessiné */
+/* Bouton effacer optimisé */
 .clear-btn {
     position: fixed;
-    top: 1rem;
+    top: 0.7rem;
     right: 1rem;
     z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
     background: var(--background);
     color: var(--primary);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 0.4rem 0.8rem;
+    padding: 0.3rem 0.7rem;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.8rem;
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -93,10 +89,9 @@ html, body, [data-testid="stAppViewContainer"] {
 .clear-btn:hover {
     background: var(--primary);
     color: white;
-    border-color: var(--primary);
 }
 
-/* Zone du chat optimisée */
+/* Zone du chat avec hauteur calculée */
 .chat-container {
     flex: 1;
     overflow-y: auto;
@@ -104,7 +99,8 @@ html, body, [data-testid="stAppViewContainer"] {
     margin: 0 0.5rem;
     border-radius: 8px;
     background-color: var(--background);
-    margin-bottom: 4.5rem;
+    margin-bottom: 3.8rem; /* Espace précis pour le footer */
+    max-height: calc(100vh - 120px); /* Hauteur calculée */
 }
 
 .chat-container::-webkit-scrollbar {
@@ -116,50 +112,48 @@ html, body, [data-testid="stAppViewContainer"] {
     border-radius: 3px;
 }
 
-/* Messages améliorés */
+/* Messages optimisés */
 .stChatMessage {
-    margin-bottom: 0.7rem !important;
+    margin-bottom: 0.6rem !important;
     animation: fadeIn 0.3s ease-out;
 }
 
 .stChatMessage .stMarkdown {
     border-radius: 12px;
-    padding: 0.7rem 1rem;
-    line-height: 1.5;
+    padding: 0.6rem 0.8rem;
+    line-height: 1.45;
     max-width: 85%;
     border: 1px solid var(--border);
     background: var(--assistant-bg);
     color: var(--text);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .stChatMessage.user .stMarkdown {
     background: var(--user-bg);
     margin-left: auto;
-    border-color: var(--primary-light);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Footer professionnel */
+/* Footer compact et optimisé */
 .footer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: var(--primary-dark);
-    padding: 0.7rem 1rem;
+    padding: 0.6rem 1rem;
     z-index: 100;
     border-top: 1px solid var(--primary);
+    height: 60px; /* Hauteur fixe */
+    display: flex;
+    align-items: center;
 }
 
 .footer .stTextInput {
     background: var(--primary-light) !important;
     border: none !important;
     border-radius: 8px !important;
+    margin: 0 !important;
 }
 
 .footer .stTextInput input {
@@ -172,34 +166,38 @@ html, body, [data-testid="stAppViewContainer"] {
     color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Suggestions CORRIGÉES avec texte toujours lisible */
+/* Suggestions optimisées */
 .suggestions-container {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 0.7rem;
-    margin: 1rem 0;
+    gap: 0.6rem;
+    margin: 0.5rem 0;
     padding: 0 0.5rem;
+    min-height: auto;
 }
 
 .suggestion-btn {
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 0.5rem 1.2rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
     cursor: pointer;
-    color: var(--primary); /* Texte sombre sur fond clair */
+    color: var(--primary);
     transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    font-weight: 500;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .suggestion-btn:hover {
     background: var(--primary);
-    color: white; /* Texte clair sur fond sombre */
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    color: white;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Supprime le footer Streamlit */
@@ -208,8 +206,9 @@ footer {visibility: hidden !important;}
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# HEADER
+# STRUCTURE OPTIMISÉE
 # -----------------------------
+# En-tête
 st.markdown('''
 <div class="header">
     <h1>⚖️ OhadAI</h1>
@@ -217,14 +216,11 @@ st.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
-# -----------------------------
-# BOUTON EFFACER
-# -----------------------------
+# Bouton effacer
 st.markdown('''
 <button class="clear-btn">
-    🗑️ Effacer l'historique
+    🗑️ Effacer
 </button>
-
 <script>
 document.querySelector('.clear-btn').addEventListener('click', function() {
     if (confirm('Voulez-vous vraiment effacer l\'historique ?')) {
@@ -234,32 +230,25 @@ document.querySelector('.clear-btn').addEventListener('click', function() {
 </script>
 ''', unsafe_allow_html=True)
 
-# -----------------------------
-# CHAT CONTAINER
-# -----------------------------
+# Conteneur de chat avec hauteur optimisée
 st.markdown('<div class="chat-container" id="chatBox">', unsafe_allow_html=True)
 
-# -----------------------------
-# SUGGESTIONS (version corrigée)
-# -----------------------------
+# Suggestions (uniquement si pas d'historique)
 if st.session_state.suggestions_visible and not st.session_state.chat_history:
     st.markdown('<div class="suggestions-container">', unsafe_allow_html=True)
     suggestions = [
         ("Procédure d'arbitrage OHADA", "arbitrage"),
         ("SARL : société de personnes ou de capitaux ?", "sarl"),
-        ("Articles AUSCGIE sur les contrats commerciaux", "contrats")
+        ("Articles AUSCGIE sur contrats", "contrats")
     ]
     for text, key in suggestions:
-        st.markdown(f'''
-        <button class="suggestion-btn" onclick="{
-            f"window.streamlitSetComponentValue('{text}')"
-        }">{text}</button>
-        ''', unsafe_allow_html=True)
+        if st.button(text, key=f"sugg_{key}"):
+            st.session_state.user_input = text
+            st.session_state.suggestions_visible = False
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-# -----------------------------
-# AFFICHAGE DES MESSAGES
-# -----------------------------
+# Affichage des messages
 for speaker, msg in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
     with st.chat_message(role):
@@ -267,11 +256,9 @@ for speaker, msg in st.session_state.chat_history:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -----------------------------
-# FOOTER PROFESSIONNEL
-# -----------------------------
+# Footer optimisé
 st.markdown('<div class="footer">', unsafe_allow_html=True)
-user_question = st.chat_input("Posez votre question juridique ici...")
+user_question = st.chat_input("Posez votre question juridique...")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
@@ -295,7 +282,7 @@ if user_question and user_question.strip():
 # -----------------------------
 st.markdown("""
 <script>
-const chatBox = window.parent.document.getElementById("chatBox");
+const chatBox = document.getElementById("chatBox");
 if (chatBox) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
