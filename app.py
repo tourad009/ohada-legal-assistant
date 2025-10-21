@@ -90,26 +90,23 @@ html, body, [data-testid="stAppViewContainer"] {
     color: white;
 }
 
-/* Zone de chat - hauteur calculée précisément */
+/* Zone de chat - hauteur calculée et scroll invisible */
 .chat-container {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll; /* garde le scroll fonctionnel */
     padding: 0.4rem 0.3rem;
     margin: 0 0.4rem;
     border-radius: 6px;
     background-color: var(--background);
-    margin-bottom: 3.2rem; /* Espace exact pour le footer */
-    max-height: calc(100vh - 110px); /* Ajustement pixel-perfect */
+    margin-bottom: 3.2rem; /* espace pour le footer */
+    max-height: calc(100vh - 110px); /* ajustement pixel-perfect */
+    
+    /* Scroll invisible */
+    -ms-overflow-style: none;  /* IE et Edge */
+    scrollbar-width: none;     /* Firefox */
 }
-
-/* Scrollbar minimaliste */
 .chat-container::-webkit-scrollbar {
-    width: 5px;
-}
-
-.chat-container::-webkit-scrollbar-thumb {
-    background: var(--primary-light);
-    border-radius: 2px;
+    display: none; /* Chrome, Safari et Opera */
 }
 
 /* Messages (inchangés) */
@@ -144,7 +141,7 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.4rem 0.8rem;
     z-index: 100;
     border-top: 1px solid var(--primary);
-    height: 45px; /* Hauteur réduite */
+    height: 45px; /* hauteur réduite */
     display: flex;
     align-items: center;
 }
@@ -167,7 +164,7 @@ html, body, [data-testid="stAppViewContainer"] {
     color: rgba(255, 255, 255, 0.7) !important;
 }
 
-/* SUGGESTIONS - VERSION ORIGINALE CONSERVÉE */
+/* Suggestions */
 .suggestions-container {
     display: flex;
     justify-content: center;
@@ -184,14 +181,14 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.4rem 1rem;
     font-size: 0.8rem;
     cursor: pointer;
-    color: var(--primary); /* Texte sombre sur fond clair */
+    color: var(--primary);
     transition: all 0.15s ease;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
 }
 
 .suggestion-btn:hover {
     background: var(--primary);
-    color: white; /* Texte clair sur fond sombre */
+    color: white;
 }
 
 /* Animation */
