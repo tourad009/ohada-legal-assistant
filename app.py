@@ -12,7 +12,7 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS AMÉLIORÉ
+# CSS AMÉLIORÉ AVEC SUGGESTIONS CORRIGÉES
 # -----------------------------
 st.markdown("""
 <style>
@@ -172,7 +172,7 @@ html, body, [data-testid="stAppViewContainer"] {
     color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Suggestions modernisées */
+/* Suggestions CORRIGÉES avec texte toujours lisible */
 .suggestions-container {
     display: flex;
     justify-content: center;
@@ -189,7 +189,7 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.5rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;
-    color: var(--primary);
+    color: var(--primary); /* Texte sombre sur fond clair */
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     font-weight: 500;
@@ -197,7 +197,7 @@ html, body, [data-testid="stAppViewContainer"] {
 
 .suggestion-btn:hover {
     background: var(--primary);
-    color: white;
+    color: white; /* Texte clair sur fond sombre */
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
@@ -240,7 +240,7 @@ document.querySelector('.clear-btn').addEventListener('click', function() {
 st.markdown('<div class="chat-container" id="chatBox">', unsafe_allow_html=True)
 
 # -----------------------------
-# SUGGESTIONS
+# SUGGESTIONS (version corrigée)
 # -----------------------------
 if st.session_state.suggestions_visible and not st.session_state.chat_history:
     st.markdown('<div class="suggestions-container">', unsafe_allow_html=True)
@@ -250,10 +250,11 @@ if st.session_state.suggestions_visible and not st.session_state.chat_history:
         ("Articles AUSCGIE sur les contrats commerciaux", "contrats")
     ]
     for text, key in suggestions:
-        if st.button(text, key=f"sugg_{key}", help=f"Poser cette question sur {key}"):
-            st.session_state.user_input = text
-            st.session_state.suggestions_visible = False
-            st.rerun()
+        st.markdown(f'''
+        <button class="suggestion-btn" onclick="{
+            f"window.streamlitSetComponentValue('{text}')"
+        }">{text}</button>
+        ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
