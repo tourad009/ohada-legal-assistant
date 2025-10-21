@@ -8,6 +8,7 @@ st.set_page_config(page_title="OhadAI ⚖️", page_icon="⚖️", layout="wide"
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+
 if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
@@ -39,32 +40,37 @@ html, body, [data-testid="stAppViewContainer"] {
     text-align: center;
     padding: 1rem 0 0.5rem 0;
 }
+
 .header h1 {
     font-size: 1.7rem;
     margin: 0;
 }
+
 .header p {
     font-size: 0.9rem;
     color: #6c757d;
     margin-top: 0.3rem;
 }
 
-/* Bouton effacer (placé en haut à droite du chat) */
+/* Bouton effacer (corrigé et fonctionnel) */
 .clear-btn {
-    position: absolute;
-    top: 1.2rem;
+    position: fixed;
+    top: 1rem;
     right: 1rem;
-    background: #f1f3f4;
-    color: #333;
-    border: none;
+    z-index: 1000;
+    background: #ffffff;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
     border-radius: 20px;
     padding: 0.35rem 0.8rem;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
 }
+
 .clear-btn:hover {
-    background: #e0e0e0;
+    background: #e74c3c;
+    color: white;
 }
 
 /* Zone du chat */
@@ -76,19 +82,23 @@ html, body, [data-testid="stAppViewContainer"] {
     border-radius: 10px;
     background-color: #f7f8fa;
     scroll-behavior: smooth;
+    margin-top: 1rem;
 }
+
 .chat::-webkit-scrollbar {
     width: 6px;
 }
+
 .chat::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 4px;
 }
 
-/* Messages */
+/* Messages (texte plus visible) */
 .stChatMessage {
     margin-bottom: 0.75rem !important;
 }
+
 .stChatMessage .stMarkdown {
     border-radius: 12px;
     padding: 0.75rem 1rem;
@@ -97,13 +107,16 @@ html, body, [data-testid="stAppViewContainer"] {
     border: 1px solid #e1e1e1;
     background: #ffffff;
     color: #1e1e1e;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     animation: fadeIn 0.25s ease-out;
 }
+
 .stChatMessage.user .stMarkdown {
-    background: #dcf8c6;
+    background: #e3f2fd;
     margin-left: auto;
     color: #1e1e1e;
 }
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
@@ -117,6 +130,7 @@ html, body, [data-testid="stAppViewContainer"] {
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
+
 .suggestions button {
     background: #fff;
     border: 1px solid #ddd;
@@ -127,6 +141,7 @@ html, body, [data-testid="stAppViewContainer"] {
     transition: all 0.2s ease;
     color: #333;
 }
+
 .suggestions button:hover {
     background: #e9ecef;
 }
@@ -141,6 +156,7 @@ html, body, [data-testid="stAppViewContainer"] {
     border-top: 1px solid #ddd;
     padding: 0.6rem 0.75rem;
 }
+
 .input-inner {
     max-width: 900px;
     margin: auto;
@@ -178,13 +194,18 @@ if st.session_state.suggestions_visible:
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 
-# Bouton effacer discret dans le coin
-st.markdown('<button class="clear-btn" onclick="window.location.reload()">🗑️ Effacer</button>', unsafe_allow_html=True)
+# Bouton effacer corrigé
+st.markdown('''
+<button class="clear-btn" onclick="if(confirm('Voulez-vous vraiment effacer l\\'historique ?')){localStorage.clear();window.location.reload();}">
+    🗑️ Effacer l'historique
+</button>
+''', unsafe_allow_html=True)
 
 for speaker, msg in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
     with st.chat_message(role):
         st.markdown(msg)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
@@ -200,7 +221,6 @@ st.markdown('</div></div>', unsafe_allow_html=True)
 if user_question and user_question.strip():
     st.session_state.suggestions_visible = False
     st.session_state.chat_history.append(("User", user_question))
-
     with st.chat_message("user"):
         st.markdown(user_question)
     with st.chat_message("assistant"):
@@ -209,8 +229,7 @@ if user_question and user_question.strip():
         for chunk in generate_answer_stream(user_question, rag_chain):
             full_response = chunk
             placeholder.markdown(full_response)
-        st.session_state.chat_history.append(("Assistant", full_response))
-
+        st.session_state.chat_history.append(("Assistant", full_response)
     st.session_state.user_input = ""
 
 # -----------------------------
