@@ -90,10 +90,9 @@ html, body, [data-testid="stAppViewContainer"] {
     color: white;
 }
 
-/* Zone de chat - hauteur calculée et scroll invisible */
+/* Zone de chat - scroll conditionnel */
 .chat-container {
     flex: 1;
-    overflow-y: scroll; /* garde le scroll fonctionnel */
     padding: 0.4rem 0.3rem;
     margin: 0 0.4rem;
     border-radius: 6px;
@@ -101,7 +100,7 @@ html, body, [data-testid="stAppViewContainer"] {
     margin-bottom: 3.2rem; /* espace pour le footer */
     max-height: calc(100vh - 110px); /* ajustement pixel-perfect */
     
-    /* Scroll invisible */
+    /* Scroll invisible par défaut */
     -ms-overflow-style: none;  /* IE et Edge */
     scrollbar-width: none;     /* Firefox */
 }
@@ -109,7 +108,17 @@ html, body, [data-testid="stAppViewContainer"] {
     display: none; /* Chrome, Safari et Opera */
 }
 
-/* Messages (inchangés) */
+/* Pas de scroll si vide */
+.chat-container.no-scroll {
+    overflow-y: hidden;
+}
+
+/* Scroll fonctionnel invisible si messages présents */
+.chat-container.scrollable {
+    overflow-y: scroll;
+}
+
+/* Messages */
 .stChatMessage {
     margin-bottom: 0.5rem !important;
     animation: fadeIn 0.2s ease-out;
@@ -141,7 +150,7 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.4rem 0.8rem;
     z-index: 100;
     border-top: 1px solid var(--primary);
-    height: 45px; /* hauteur réduite */
+    height: 45px;
     display: flex;
     align-items: center;
 }
@@ -227,10 +236,16 @@ document.querySelector('.clear-btn').addEventListener('click', function() {
 </script>
 ''', unsafe_allow_html=True)
 
-# 3. Conteneur de chat avec hauteur parfaite
-st.markdown('<div class="chat-container" id="chatBox">', unsafe_allow_html=True)
+# 3. Conteneur de chat avec hauteur parfaite et scroll conditionnel
+chat_class = "chat-container"
+if not st.session_state.chat_history:
+    chat_class += " no-scroll"
+else:
+    chat_class += " scrollable"
 
-# 4. Suggestions (version originale conservée)
+st.markdown(f'<div class="{chat_class}" id="chatBox">', unsafe_allow_html=True)
+
+# 4. Suggestions
 if st.session_state.suggestions_visible and not st.session_state.chat_history:
     st.markdown('<div class="suggestions-container">', unsafe_allow_html=True)
     suggestions = [
