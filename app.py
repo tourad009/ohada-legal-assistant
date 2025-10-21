@@ -12,14 +12,14 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS ÉPURÉ ET FLUIDE
+# CSS MODERNE ET LISIBLE
 # -----------------------------
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: #f8f9fa;
+    background-color: #f7f8fa;
     font-family: "Inter", sans-serif;
     color: #1e1e1e;
 }
@@ -40,22 +40,41 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 1rem 0 0.5rem 0;
 }
 .header h1 {
-    font-size: 1.6rem;
+    font-size: 1.7rem;
     margin: 0;
 }
 .header p {
     font-size: 0.9rem;
     color: #6c757d;
-    margin: 0.25rem 0 0 0;
+    margin-top: 0.3rem;
+}
+
+/* Bouton effacer (placé en haut à droite du chat) */
+.clear-btn {
+    position: absolute;
+    top: 1.2rem;
+    right: 1rem;
+    background: #f1f3f4;
+    color: #333;
+    border: none;
+    border-radius: 20px;
+    padding: 0.35rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s ease;
+}
+.clear-btn:hover {
+    background: #e0e0e0;
 }
 
 /* Zone du chat */
 .chat {
+    position: relative;
     flex: 1;
     overflow-y: auto;
     padding: 1rem;
     border-radius: 10px;
-    background-color: #f8f9fa;
+    background-color: #f7f8fa;
     scroll-behavior: smooth;
 }
 .chat::-webkit-scrollbar {
@@ -76,13 +95,14 @@ html, body, [data-testid="stAppViewContainer"] {
     line-height: 1.5;
     max-width: 75%;
     border: 1px solid #e1e1e1;
-    background: #fff;
+    background: #ffffff;
     color: #1e1e1e;
     animation: fadeIn 0.25s ease-out;
 }
 .stChatMessage.user .stMarkdown {
-    background: #e9ecef;
+    background: #dcf8c6;
     margin-left: auto;
+    color: #1e1e1e;
 }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
@@ -98,13 +118,14 @@ html, body, [data-testid="stAppViewContainer"] {
     margin-bottom: 0.5rem;
 }
 .suggestions button {
-    background: white;
+    background: #fff;
     border: 1px solid #ddd;
     border-radius: 20px;
-    padding: 0.4rem 1rem;
+    padding: 0.45rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    color: #333;
 }
 .suggestions button:hover {
     background: #e9ecef;
@@ -116,28 +137,13 @@ html, body, [data-testid="stAppViewContainer"] {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
+    background: #ffffff;
     border-top: 1px solid #ddd;
     padding: 0.6rem 0.75rem;
 }
 .input-inner {
     max-width: 900px;
     margin: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Bouton effacer */
-button[data-testid="clear_button"] {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 0.8rem;
-}
-button[data-testid="clear_button"]:hover {
-    background: #c82333;
 }
 
 /* Supprime le footer Streamlit */
@@ -151,7 +157,7 @@ footer {visibility: hidden !important;}
 st.markdown('<div class="header"><h1>⚖️ OhadAI</h1><p>Assistant juridique OHADA</p></div>', unsafe_allow_html=True)
 
 # -----------------------------
-# SUGGESTIONS (affichées avant 1er message)
+# SUGGESTIONS (avant premier message)
 # -----------------------------
 if st.session_state.suggestions_visible:
     st.markdown('<div class="suggestions">', unsafe_allow_html=True)
@@ -168,9 +174,13 @@ if st.session_state.suggestions_visible:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# CHAT ZONE
+# CHAT ZONE + bouton effacer
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
+
+# Bouton effacer discret dans le coin
+st.markdown('<button class="clear-btn" onclick="window.location.reload()">🗑️ Effacer</button>', unsafe_allow_html=True)
+
 for speaker, msg in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
     with st.chat_message(role):
@@ -182,17 +192,13 @@ st.markdown('</div>', unsafe_allow_html=True)
 # -----------------------------
 st.markdown('<div class="input-bar"><div class="input-inner">', unsafe_allow_html=True)
 user_question = st.chat_input("Posez votre question juridique...") or st.session_state.get("user_input", "")
-if st.button("🗑️ Effacer", key="clear_button"):
-    st.session_state.chat_history = []
-    st.session_state.suggestions_visible = True
-    st.rerun()
 st.markdown('</div></div>', unsafe_allow_html=True)
 
 # -----------------------------
 # TRAITEMENT MESSAGE
 # -----------------------------
 if user_question and user_question.strip():
-    st.session_state.suggestions_visible = False  # Masque les bulles dès le premier message
+    st.session_state.suggestions_visible = False
     st.session_state.chat_history.append(("User", user_question))
 
     with st.chat_message("user"):
