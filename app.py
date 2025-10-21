@@ -12,7 +12,7 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS : SIMPLE (NOIR SUR BLANC)
+# CSS : SIMPLE ET PROFESSIONNEL
 # -----------------------------
 st.markdown("""
 <style>
@@ -58,7 +58,7 @@ html, body, [data-testid="stAppViewContainer"] {
     z-index: 1000;
     background: #FFFFFF;
     color: #000000;
-    border: 1px solid #000000;
+    border: 1px solid #2D3748;
     border-radius: 20px;
     padding: 0.35rem 0.8rem;
     cursor: pointer;
@@ -73,7 +73,7 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 1rem;
     border-radius: 10px;
     background-color: #FFFFFF;
-    border: 1px solid #000000;
+    border: 1px solid #2D3748;
     scroll-behavior: smooth;
     margin-top: 1rem;
 }
@@ -81,7 +81,7 @@ html, body, [data-testid="stAppViewContainer"] {
     width: 6px;
 }
 .chat::-webkit-scrollbar-thumb {
-    background: #000000;
+    background: #2D3748;
     border-radius: 4px;
 }
 
@@ -94,17 +94,17 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.75rem 1rem;
     line-height: 1.5;
     max-width: 75%;
-    border: 1px solid #000000;
+    border: 1px solid #2D3748;
     background: #FFFFFF;
     color: #000000;
 }
 .stChatMessage.user .stMarkdown {
-    background: #F0F0F0;
+    background: #F7F7F7;
     margin-left: auto;
     color: #000000;
 }
 
-/* Animation d'apparition (gardée pour fluidité) */
+/* Animation d'apparition */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
@@ -120,7 +120,7 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 .suggestions button {
     background: #FFFFFF;
-    border: 1px solid #000000;
+    border: 1px solid #2D3748;
     border-radius: 20px;
     padding: 0.45rem 1.2rem;
     font-size: 0.9rem;
@@ -135,7 +135,7 @@ html, body, [data-testid="stAppViewContainer"] {
     left: 0;
     right: 0;
     background: #FFFFFF;
-    border-top: 1px solid #000000;
+    border-top: 1px solid #2D3748;
     padding: 0.6rem 0.75rem;
 }
 .input-inner {
@@ -175,7 +175,7 @@ if st.session_state.suggestions_visible:
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 
-# Bouton effacer (utilisation de st.button pour compatibilité)
+# Bouton effacer
 with st.container():
     if st.button("🗑️ Effacer l'historique", key="clear_chat", help="Réinitialiser le chat"):
         st.session_state.chat_history = []
