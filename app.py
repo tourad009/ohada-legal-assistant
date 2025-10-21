@@ -21,6 +21,12 @@ if "chat_history" not in st.session_state:
 # ----------------------------
 st.markdown("""
 <style>
+    /* Supprime le scroll global de Streamlit */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+        height: 100%;
+        overflow: hidden !important;
+    }
+
     /* Structure principale */
     .main-container {
         display: flex;
@@ -35,8 +41,9 @@ st.markdown("""
     .chat-container {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         padding: 1rem 0;
-        margin-bottom: 70px; /* Espace pour la barre d’input fixe */
+        margin-bottom: 70px; /* pour ne pas cacher les messages derrière l'input */
         scrollbar-width: thin;
         scrollbar-color: #ccc transparent;
     }
@@ -143,8 +150,8 @@ for i, question in enumerate(suggested_questions):
         if st.button(question, key=f"sugg_{i}"):
             st.session_state.user_input = question
 
-# Zone de chat
-st.markdown('<div class="chat-container" id="chat">', unsafe_allow_html=True)
+# Zone de chat avec scroll uniquement ici
+st.markdown('<div class="chat-container" id="chat-container">', unsafe_allow_html=True)
 for speaker, message in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
     with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
@@ -160,11 +167,9 @@ if st.button("🗑️ Effacer la conversation", key="clear_chat", use_container_
 # BARRE D'INPUT FIXE
 # ----------------------------
 st.markdown('<div class="input-bar"><div class="input-container">', unsafe_allow_html=True)
-
 user_question = st.chat_input(
     placeholder="Posez votre question juridique ici..."
 ) or st.session_state.get("user_input", "")
-
 st.markdown('</div></div>', unsafe_allow_html=True)
 
 # ----------------------------
@@ -185,13 +190,13 @@ if user_question and user_question.strip():
     st.session_state.user_input = ""
 
 # ----------------------------
-# SCROLL AUTOMATIQUE
+# SCROLL AUTOMATIQUE (dans la zone chat uniquement)
 # ----------------------------
 st.markdown("""
 <script>
-const chatContainer = window.parent.document.getElementById('chat');
-if (chatContainer) {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+const chatBox = window.parent.document.getElementById('chat-container');
+if (chatBox) {
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 </script>
 """, unsafe_allow_html=True)
