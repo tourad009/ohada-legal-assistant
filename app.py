@@ -229,7 +229,7 @@ if user_question and user_question.strip():
         for chunk in generate_answer_stream(user_question, rag_chain):
             full_response = chunk
             placeholder.markdown(full_response)
-        st.session_state.chat_history.append(("Assistant", full_response)
+        st.session_state.chat_history.append(("Assistant", full_response))
     st.session_state.user_input = ""
 
 # -----------------------------
@@ -241,3 +241,4 @@ const chatBox = window.parent.document.getElementById("chatBox");
 if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 </script>
 """, unsafe_allow_html=True)
+    
