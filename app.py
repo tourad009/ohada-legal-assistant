@@ -8,21 +8,20 @@ st.set_page_config(page_title="OhadAI ⚖️", page_icon="⚖️", layout="wide"
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-
 if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS MODERNE ET LISIBLE
+# CSS : SIMPLE (NOIR SUR BLANC)
 # -----------------------------
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: #f7f8fa;
+    background-color: #FFFFFF;
     font-family: "Inter", sans-serif;
-    color: #1e1e1e;
+    color: #000000;
 }
 
 /* Conteneur principal */
@@ -40,37 +39,30 @@ html, body, [data-testid="stAppViewContainer"] {
     text-align: center;
     padding: 1rem 0 0.5rem 0;
 }
-
 .header h1 {
     font-size: 1.7rem;
     margin: 0;
+    color: #000000;
 }
-
 .header p {
     font-size: 0.9rem;
-    color: #6c757d;
+    color: #000000;
     margin-top: 0.3rem;
 }
 
-/* Bouton effacer (corrigé et fonctionnel) */
+/* Bouton effacer */
 .clear-btn {
-    position: fixed;
+    position: absolute;
     top: 1rem;
     right: 1rem;
     z-index: 1000;
-    background: #ffffff;
-    color: #e74c3c;
-    border: 1px solid #e74c3c;
+    background: #FFFFFF;
+    color: #000000;
+    border: 1px solid #000000;
     border-radius: 20px;
     padding: 0.35rem 0.8rem;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
-}
-
-.clear-btn:hover {
-    background: #e74c3c;
-    color: white;
 }
 
 /* Zone du chat */
@@ -80,43 +72,39 @@ html, body, [data-testid="stAppViewContainer"] {
     overflow-y: auto;
     padding: 1rem;
     border-radius: 10px;
-    background-color: #f7f8fa;
+    background-color: #FFFFFF;
+    border: 1px solid #000000;
     scroll-behavior: smooth;
     margin-top: 1rem;
 }
-
 .chat::-webkit-scrollbar {
     width: 6px;
 }
-
 .chat::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: #000000;
     border-radius: 4px;
 }
 
-/* Messages (texte plus visible) */
+/* Messages */
 .stChatMessage {
     margin-bottom: 0.75rem !important;
 }
-
 .stChatMessage .stMarkdown {
     border-radius: 12px;
     padding: 0.75rem 1rem;
     line-height: 1.5;
     max-width: 75%;
-    border: 1px solid #e1e1e1;
-    background: #ffffff;
-    color: #1e1e1e;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    animation: fadeIn 0.25s ease-out;
+    border: 1px solid #000000;
+    background: #FFFFFF;
+    color: #000000;
 }
-
 .stChatMessage.user .stMarkdown {
-    background: #e3f2fd;
+    background: #F0F0F0;
     margin-left: auto;
-    color: #1e1e1e;
+    color: #000000;
 }
 
+/* Animation d'apparition (gardée pour fluidité) */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
@@ -130,20 +118,14 @@ html, body, [data-testid="stAppViewContainer"] {
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
-
 .suggestions button {
-    background: #fff;
-    border: 1px solid #ddd;
+    background: #FFFFFF;
+    border: 1px solid #000000;
     border-radius: 20px;
     padding: 0.45rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-    color: #333;
-}
-
-.suggestions button:hover {
-    background: #e9ecef;
+    color: #000000;
 }
 
 /* Input fixée */
@@ -152,11 +134,10 @@ html, body, [data-testid="stAppViewContainer"] {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #ffffff;
-    border-top: 1px solid #ddd;
+    background: #FFFFFF;
+    border-top: 1px solid #000000;
     padding: 0.6rem 0.75rem;
 }
-
 .input-inner {
     max-width: 900px;
     margin: auto;
@@ -194,12 +175,12 @@ if st.session_state.suggestions_visible:
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 
-# Bouton effacer corrigé
-st.markdown('''
-<button class="clear-btn" onclick="if(confirm('Voulez-vous vraiment effacer l\\'historique ?')){localStorage.clear();window.location.reload();}">
-    🗑️ Effacer l'historique
-</button>
-''', unsafe_allow_html=True)
+# Bouton effacer (utilisation de st.button pour compatibilité)
+with st.container():
+    if st.button("🗑️ Effacer l'historique", key="clear_chat", help="Réinitialiser le chat"):
+        st.session_state.chat_history = []
+        st.session_state.suggestions_visible = True
+        st.rerun()
 
 for speaker, msg in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
@@ -241,4 +222,3 @@ const chatBox = window.parent.document.getElementById("chatBox");
 if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 </script>
 """, unsafe_allow_html=True)
-    
