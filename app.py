@@ -12,16 +12,16 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS : SIMPLE (NOIR SUR BLANC)
+# CSS MODERNE ET COLORÉ
 # -----------------------------
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: #FFFFFF;
+    background-color: #f5f7fa;
     font-family: "Inter", sans-serif;
-    color: #000000;
+    color: #1e1e1e;
 }
 
 /* Container principal */
@@ -41,11 +41,10 @@ html, body, [data-testid="stAppViewContainer"] {
 .header h1 {
     font-size: 1.8rem;
     margin: 0;
-    color: #000000;
 }
 .header p {
     font-size: 0.9rem;
-    color: #000000;
+    color: #6c757d;
     margin-top: 0.3rem;
 }
 
@@ -54,17 +53,19 @@ html, body, [data-testid="stAppViewContainer"] {
     position: absolute;
     top: 1.2rem;
     right: 1rem;
-    background: #FFFFFF;
-    color: #000000;
-    border: 1px solid #000000;
+    background: linear-gradient(135deg, #ff6b6b, #fa5252);
+    color: #fff;
+    border: none;
     border-radius: 20px;
     padding: 0.35rem 0.9rem;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 .clear-btn:hover {
-    background: #E8E8E8;
+    background: linear-gradient(135deg, #fa5252, #f03e3e);
+    transform: scale(1.05);
 }
 
 /* Zone du chat */
@@ -74,15 +75,14 @@ html, body, [data-testid="stAppViewContainer"] {
     overflow-y: auto;
     padding: 1rem;
     border-radius: 12px;
-    background-color: #FFFFFF;
-    border: 1px solid #000000;
+    background-color: #f5f7fa;
     scroll-behavior: smooth;
 }
 .chat::-webkit-scrollbar {
     width: 6px;
 }
 .chat::-webkit-scrollbar-thumb {
-    background: #000000;
+    background: #ccc;
     border-radius: 4px;
 }
 
@@ -95,19 +95,21 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.8rem 1rem;
     line-height: 1.5;
     max-width: 75%;
-    border: 1px solid #000000;
+    border: none;
     animation: fadeIn 0.25s ease-out;
 }
 
 /* Couleurs des bulles */
 .stChatMessage.user .stMarkdown {
-    background: #F0F0F0;
-    color: #000000;
+    background: #d1f7c4; /* Vert pastel clair */
+    color: #1e1e1e;
     margin-left: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 .stChatMessage.assistant .stMarkdown {
-    background: #FFFFFF;
-    color: #000000;
+    background: #ffffff;
+    color: #1e1e1e;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 /* Animation d'apparition */
@@ -125,17 +127,17 @@ html, body, [data-testid="stAppViewContainer"] {
     margin-bottom: 0.5rem;
 }
 .suggestions button {
-    background: #FFFFFF;
-    border: 1px solid #000000;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
     border-radius: 20px;
     padding: 0.5rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;
-    color: #000000;
+    color: #333;
     transition: all 0.2s ease;
 }
 .suggestions button:hover {
-    background: #E8E8E8;
+    background: #e9ecef;
 }
 
 /* Input fixée */
@@ -144,8 +146,8 @@ html, body, [data-testid="stAppViewContainer"] {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #FFFFFF;
-    border-top: 1px solid #000000;
+    background: #ffffff;
+    border-top: 1px solid #dee2e6;
     padding: 0.6rem 0.75rem;
 }
 .input-inner {
@@ -185,8 +187,8 @@ if st.session_state.suggestions_visible:
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 
-# Bouton effacer
-if st.button("🗑️ Effacer la conversation", key="clear_chat", help="Réinitialiser le chat"):
+# Bouton effacer (fonctionnel)
+if st.button("🗑️ Effacer la conversation", key="clear_chat", help="Réinitialiser le chat", use_container_width=False):
     st.session_state.chat_history = []
     st.session_state.suggestions_visible = True
     st.rerun()
