@@ -12,7 +12,7 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS OPTIMISÉ POUR HAUTEUR PARFAITE
+# CSS OPTIMISÉ POUR HAUTEUR PARFAITE ET BUBBLES DE CHAT AMÉLIORÉES
 # -----------------------------
 st.markdown("""
 <style>
@@ -24,8 +24,8 @@ st.markdown("""
     --text: #1A202C;
     --text-light: #4A5568;
     --border: #E2E8F0;
-    --user-bg: #F7FAFC;
-    --assistant-bg: #FFFFFF;
+    --user-bg: #E6FFFA; /* Vert clair inspiré de WhatsApp pour user */
+    --assistant-bg: #F7FAFC; /* Gris clair pour assistant */
 }
 
 html, body, [data-testid="stAppViewContainer"] {
@@ -94,7 +94,7 @@ html, body, [data-testid="stAppViewContainer"] {
 .chat-container {
     flex: 1;
     overflow-y: scroll; /* garde le scroll fonctionnel */
-    padding: 0.4rem 0.3rem;
+    padding: 0.8rem 1rem; /* Plus de padding pour aérer */
     margin: 0 0.4rem;
     border-radius: 6px;
     background-color: var(--background);
@@ -109,26 +109,70 @@ html, body, [data-testid="stAppViewContainer"] {
     display: none; /* Chrome, Safari et Opera */
 }
 
-/* Messages (inchangés) */
+/* Messages - Améliorés pour ressembler à des bulles de chat classiques */
 .stChatMessage {
-    margin-bottom: 0.5rem !important;
-    animation: fadeIn 0.2s ease-out;
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem !important; /* Plus d'espace entre messages */
+    animation: fadeIn 0.3s ease-out;
+}
+
+.stChatMessage.assistant {
+    justify-content: flex-start;
+}
+
+.stChatMessage.user {
+    justify-content: flex-end;
 }
 
 .stChatMessage .stMarkdown {
-    border-radius: 10px;
-    padding: 0.5rem 0.7rem;
-    line-height: 1.4;
-    max-width: 85%;
-    border: 1px solid var(--border);
-    background: var(--assistant-bg);
+    position: relative;
+    border-radius: 18px; /* Coins plus arrondis pour effet bulle */
+    padding: 0.8rem 1.2rem; /* Padding plus généreux */
+    line-height: 1.5;
+    max-width: 75%; /* Largeur réduite pour mieux simuler une conversation */
+    border: none; /* Retire la bordure pour un look plus moderne */
     color: var(--text);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Ombre douce */
 }
 
+/* Bulles assistant (gauche) */
+.stChatMessage.assistant .stMarkdown {
+    background: var(--assistant-bg);
+    border-bottom-left-radius: 4px; /* Coin légèrement carré pour simuler tail */
+}
+
+/* Bulles user (droite) */
 .stChatMessage.user .stMarkdown {
     background: var(--user-bg);
-    margin-left: auto;
+    border-bottom-right-radius: 4px; /* Coin légèrement carré pour simuler tail */
+}
+
+/* Ajout de "tails" pour effet bulle réaliste */
+.stChatMessage.assistant .stMarkdown::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 12px;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
+    border-top-color: var(--assistant-bg);
+    border-bottom: 0;
+    transform: rotate(180deg); /* Pointe vers le bas pour tail */
+}
+
+.stChatMessage.user .stMarkdown::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 12px;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
+    border-top-color: var(--user-bg);
+    border-bottom: 0;
+    transform: rotate(180deg); /* Pointe vers le bas pour tail */
 }
 
 /* Footer ultra-compact */
@@ -246,10 +290,11 @@ if st.session_state.suggestions_visible and not st.session_state.chat_history:
         ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 5. Affichage des messages
+# 5. Affichage des messages avec avatars pour un look plus conversationnel
 for speaker, msg in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
-    with st.chat_message(role):
+    avatar = "🧑‍💼" if role == "user" else "⚖️"  # Avatars personnalisés
+    with st.chat_message(role, avatar=avatar):
         st.markdown(msg)
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -265,9 +310,9 @@ st.markdown('</div>', unsafe_allow_html=True)
 if user_question and user_question.strip():
     st.session_state.suggestions_visible = False
     st.session_state.chat_history.append(("User", user_question))
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="🧑‍💼"):
         st.markdown(user_question)
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="⚖️"):
         placeholder = st.empty()
         full_response = ""
         for chunk in generate_answer_stream(user_question, rag_chain):
