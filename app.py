@@ -8,38 +8,23 @@ st.set_page_config(page_title="OhadAI ⚖️", page_icon="⚖️", layout="wide"
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
+if "suggestions_visible" not in st.session_state:
+    st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS ÉPURÉ ET MODERNE
+# CSS ÉPURÉ ET FLUIDE
 # -----------------------------
 st.markdown("""
 <style>
-/* Reset Streamlit layout */
 html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: var(--bg);
+    background-color: #f8f9fa;
+    font-family: "Inter", sans-serif;
+    color: #1e1e1e;
 }
 
-/* Thème clair et sombre */
-:root {
-    --bg: #f8f9fa;
-    --text: #1e1e1e;
-    --border: #dee2e6;
-    --user-bubble: #e9ecef;
-    --assistant-bubble: #ffffff;
-}
-[data-theme="dark"] {
-    --bg: #1e1e1e;
-    --text: #f1f1f1;
-    --border: #333;
-    --user-bubble: #2a2a2a;
-    --assistant-bubble: #3a3a3a;
-}
-
-/* Container principal */
+/* Conteneur principal */
 .main {
     display: flex;
     flex-direction: column;
@@ -49,38 +34,35 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0;
 }
 
-/* Header */
+/* En-tête */
 .header {
     text-align: center;
-    padding: 0.8rem 1rem;
-    margin-bottom: 0.5rem;
+    padding: 1rem 0 0.5rem 0;
 }
 .header h1 {
     font-size: 1.6rem;
     margin: 0;
-    color: var(--text);
 }
 .header p {
-    color: #6c757d;
     font-size: 0.9rem;
+    color: #6c757d;
     margin: 0.25rem 0 0 0;
 }
 
-/* Zone de chat */
+/* Zone du chat */
 .chat {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem 0.75rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background-color: var(--bg);
+    padding: 1rem;
+    border-radius: 10px;
+    background-color: #f8f9fa;
     scroll-behavior: smooth;
 }
 .chat::-webkit-scrollbar {
     width: 6px;
 }
 .chat::-webkit-scrollbar-thumb {
-    background: #bbb;
+    background: #ccc;
     border-radius: 4px;
 }
 
@@ -91,15 +73,15 @@ html, body, [data-testid="stAppViewContainer"] {
 .stChatMessage .stMarkdown {
     border-radius: 12px;
     padding: 0.75rem 1rem;
-    line-height: 1.4;
+    line-height: 1.5;
     max-width: 75%;
-    border: 1px solid var(--border);
-    background: var(--assistant-bubble);
-    color: var(--text);
+    border: 1px solid #e1e1e1;
+    background: #fff;
+    color: #1e1e1e;
     animation: fadeIn 0.25s ease-out;
 }
 .stChatMessage.user .stMarkdown {
-    background: var(--user-bubble);
+    background: #e9ecef;
     margin-left: auto;
 }
 @keyframes fadeIn {
@@ -116,17 +98,16 @@ html, body, [data-testid="stAppViewContainer"] {
     margin-bottom: 0.5rem;
 }
 .suggestions button {
-    background: transparent;
-    border: 1px solid var(--border);
+    background: white;
+    border: 1px solid #ddd;
     border-radius: 20px;
     padding: 0.4rem 1rem;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     cursor: pointer;
-    color: var(--text);
     transition: all 0.2s ease;
 }
 .suggestions button:hover {
-    background: var(--border);
+    background: #e9ecef;
 }
 
 /* Input fixée */
@@ -135,9 +116,9 @@ html, body, [data-testid="stAppViewContainer"] {
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-    padding: 0.6rem 0.5rem;
+    background: #fff;
+    border-top: 1px solid #ddd;
+    padding: 0.6rem 0.75rem;
 }
 .input-inner {
     max-width: 900px;
@@ -147,7 +128,7 @@ html, body, [data-testid="stAppViewContainer"] {
     gap: 0.5rem;
 }
 
-/* Bouton clear */
+/* Bouton effacer */
 button[data-testid="clear_button"] {
     background: #dc3545;
     color: white;
@@ -164,36 +145,30 @@ footer {visibility: hidden !important;}
 </style>
 """, unsafe_allow_html=True)
 
-# Appliquer thème
-st.markdown(f'<body data-theme={"dark" if st.session_state.dark_mode else "light"}>', unsafe_allow_html=True)
+# -----------------------------
+# HEADER
+# -----------------------------
+st.markdown('<div class="header"><h1>⚖️ OhadAI</h1><p>Assistant juridique OHADA</p></div>', unsafe_allow_html=True)
 
 # -----------------------------
-# HEADER & TOGGLE MODE
+# SUGGESTIONS (affichées avant 1er message)
 # -----------------------------
-col1, col2 = st.columns([8, 1])
-with col1:
-    st.markdown('<div class="header"><h1>⚖️ OhadAI</h1><p>Assistant juridique OHADA</p></div>', unsafe_allow_html=True)
-with col2:
-    if st.button("🌙" if not st.session_state.dark_mode else "☀️", help="Changer de thème"):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
+if st.session_state.suggestions_visible:
+    st.markdown('<div class="suggestions">', unsafe_allow_html=True)
+    suggestions = [
+        "Procédure d'arbitrage ?",
+        "SARL : société de personnes ou de capitaux ?",
+        "Articles AUSCGIE sur contrat commercial ?"
+    ]
+    for s in suggestions:
+        if st.button(s, key=s):
+            st.session_state.user_input = s
+            st.session_state.suggestions_visible = False
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# SUGGESTIONS
-# -----------------------------
-st.markdown('<div class="suggestions">', unsafe_allow_html=True)
-suggestions = [
-    "Procédure d'arbitrage ?",
-    "SARL : société de personnes ou de capitaux ?",
-    "Articles AUSCGIE sur contrat commercial ?"
-]
-for s in suggestions:
-    if st.button(s, key=s):
-        st.session_state.user_input = s
-st.markdown('</div>', unsafe_allow_html=True)
-
-# -----------------------------
-# ZONE DE CHAT
+# CHAT ZONE
 # -----------------------------
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 for speaker, msg in st.session_state.chat_history:
@@ -203,12 +178,13 @@ for speaker, msg in st.session_state.chat_history:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# BARRE D'INPUT FIXE
+# INPUT FIXE
 # -----------------------------
 st.markdown('<div class="input-bar"><div class="input-inner">', unsafe_allow_html=True)
-user_question = st.chat_input("Posez votre question...") or st.session_state.get("user_input", "")
+user_question = st.chat_input("Posez votre question juridique...") or st.session_state.get("user_input", "")
 if st.button("🗑️ Effacer", key="clear_button"):
     st.session_state.chat_history = []
+    st.session_state.suggestions_visible = True
     st.rerun()
 st.markdown('</div></div>', unsafe_allow_html=True)
 
@@ -216,7 +192,9 @@ st.markdown('</div></div>', unsafe_allow_html=True)
 # TRAITEMENT MESSAGE
 # -----------------------------
 if user_question and user_question.strip():
+    st.session_state.suggestions_visible = False  # Masque les bulles dès le premier message
     st.session_state.chat_history.append(("User", user_question))
+
     with st.chat_message("user"):
         st.markdown(user_question)
     with st.chat_message("assistant"):
@@ -226,10 +204,11 @@ if user_question and user_question.strip():
             full_response = chunk
             placeholder.markdown(full_response)
         st.session_state.chat_history.append(("Assistant", full_response))
+
     st.session_state.user_input = ""
 
 # -----------------------------
-# SCROLL AUTO DANS LE CHAT SEULEMENT
+# SCROLL AUTOMATIQUE
 # -----------------------------
 st.markdown("""
 <script>
