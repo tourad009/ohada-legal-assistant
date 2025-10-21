@@ -86,7 +86,7 @@ def setup_llm():
         api_key=os.getenv("OPENROUTER_API_KEY"),
         base_url="https://openrouter.ai/api/v1",
         model="qwen/qwen-2.5-72b-instruct",
-        temperature=0.2,
+        temperature=0.1,
         max_tokens=1000
     )
     return llm

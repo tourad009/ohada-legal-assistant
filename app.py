@@ -1,156 +1,199 @@
 import streamlit as st
 from rag_pipeline import generate_answer_stream, rag_chain
 
-# Configuration de la page
+# ----------------------------
+# CONFIGURATION DE LA PAGE
+# ----------------------------
 st.set_page_config(
-    page_title="OHADA Legal Assistant",
+    page_title="OhadAI ⚖️",
     page_icon="⚖️",
     layout="wide"
 )
 
-# Initialisation de l'historique du chat
+# ----------------------------
+# INITIALISATION
+# ----------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# CSS pour un design moderne et conversationnel
+# ----------------------------
+# STYLES CSS MODERNES
+# ----------------------------
 st.markdown("""
 <style>
+    /* Structure principale */
     .main-container {
-        max-width: 900px;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        max-width: 800px;
         margin: auto;
-        padding: 20px;
+        padding: 0 1rem;
     }
+
+    /* Zone de chat */
+    .chat-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem 0;
+        margin-bottom: 70px; /* Espace pour la barre d’input fixe */
+        scrollbar-width: thin;
+        scrollbar-color: #ccc transparent;
+    }
+
+    /* Messages */
     .stChatMessage {
-        margin-bottom: 12px;
+        margin-bottom: 10px !important;
+        display: flex !important;
     }
+
     .stChatMessage.user {
-        flex-direction: row-reverse;
-        text-align: right;
+        justify-content: flex-end;
     }
+
     .stChatMessage.assistant {
-        flex-direction: row;
-        text-align: left;
+        justify-content: flex-start;
     }
+
     .stChatMessage .stMarkdown {
-        padding: 12px;
-        border-radius: 12px;
+        border-radius: 16px;
+        padding: 12px 16px;
         max-width: 75%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
+
     .stChatMessage.user .stMarkdown {
         background-color: #DCF8C6;
-        color: black;
+        color: #000;
     }
+
     .stChatMessage.assistant .stMarkdown {
-        background-color: #E3F2FD;
-        color: black;
+        background-color: #F1F0F0;
+        color: #111;
     }
+
+    /* Barre d'input fixée en bas */
+    .input-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid #ddd;
+        padding: 10px 0;
+        box-shadow: 0 -1px 4px rgba(0,0,0,0.05);
+    }
+
+    .input-container {
+        max-width: 800px;
+        margin: auto;
+        padding: 0 1rem;
+    }
+
+    /* Boutons suggérés */
     .suggested-button {
-        background-color: #f0f0f0;
+        background-color: #f9f9f9;
         border: 1px solid #ddd;
         border-radius: 20px;
         padding: 8px 16px;
         margin: 5px;
         cursor: pointer;
-        transition: background-color 0.2s;
-        display: inline-block;
-        text-align: center;
+        font-size: 0.9rem;
+        transition: all 0.2s ease-in-out;
     }
     .suggested-button:hover {
-        background-color: #e0e0e0;
+        background-color: #ececec;
     }
-    .chat-container {
-        max-height: 450px;
-        overflow-y: auto;
-        margin-bottom: 20px;
-        padding: 10px;
-        border: 1px solid #eee;
-        border-radius: 10px;
-        background-color: #fafafa;
-    }
-    .stChatInput input {
-        border-radius: 8px;
-        padding: 10px;
-    }
+
+    /* Bouton de reset */
     .clear-button {
         background-color: #ff4b4b;
         color: white;
+        border: none;
         border-radius: 20px;
         padding: 8px 16px;
-        margin-top: 10px;
+        margin-top: 5px;
         cursor: pointer;
+        font-size: 0.9rem;
     }
+
 </style>
 """, unsafe_allow_html=True)
 
-# Conteneur principal
-with st.container():
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+# ----------------------------
+# CONTENU PRINCIPAL
+# ----------------------------
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-    # Header
-    st.title("OhadAI ⚖️")
-    st.subheader("Assistant Juridique OHADA")
-    st.markdown("Posez vos questions juridiques et obtenez des réponses précises basées sur les textes OHADA.")
+st.title("⚖️ OhadAI – Assistant Juridique OHADA")
+st.markdown("Posez vos questions juridiques et obtenez des réponses basées sur les textes de l’OHADA.")
 
-    # Boutons de questions suggérées
-    st.markdown("### Questions fréquentes")
-    suggested_questions = [
-        "Quelle est la procédure pour un arbitrage ?",
-        "La SARL est-elle une société de personnes ou de capitaux ?",
-        "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
-    ]
-    cols = st.columns(3)
-    for i, question in enumerate(suggested_questions):
-        with cols[i]:
-            if st.button(question, key=f"sugg_{i}", help="Cliquez pour poser cette question"):
-                st.session_state.user_input = question  # Stocke la question pour traitement
+# Boutons de questions suggérées
+st.markdown("#### Questions fréquentes :")
+suggested_questions = [
+    "Quelle est la procédure pour un arbitrage ?",
+    "La SARL est-elle une société de personnes ou de capitaux ?",
+    "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
+]
+cols = st.columns(3)
+for i, question in enumerate(suggested_questions):
+    with cols[i]:
+        if st.button(question, key=f"sugg_{i}"):
+            st.session_state.user_input = question
 
-    # Conteneur pour le chat avec scroll
-    chat_container = st.container()
-    with chat_container:
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for speaker, message in st.session_state.chat_history:
-            role = "user" if speaker == "User" else "assistant"
-            with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
-                st.markdown(message)
-        st.markdown('</div>', unsafe_allow_html=True)
+# Zone de chat
+st.markdown('<div class="chat-container" id="chat">', unsafe_allow_html=True)
+for speaker, message in st.session_state.chat_history:
+    role = "user" if speaker == "User" else "assistant"
+    with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
+        st.markdown(message)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # Bouton pour effacer l'historique
-    if st.button("Effacer la conversation", key="clear_chat"):
-        st.session_state.chat_history = []
-        st.rerun()
+# Bouton clear
+if st.button("🗑️ Effacer la conversation", key="clear_chat", use_container_width=True):
+    st.session_state.chat_history = []
+    st.rerun()
 
-    # Entrée utilisateur
-    user_question = st.chat_input(
-        placeholder="Posez votre question juridique... Ex: Quelles sont les étapes pour créer une SARL selon l'OHADA ?"
-    ) or st.session_state.get("user_input", "")
+# ----------------------------
+# BARRE D'INPUT FIXE
+# ----------------------------
+st.markdown('<div class="input-bar"><div class="input-container">', unsafe_allow_html=True)
 
-    # Traitement de la question
-    if user_question and user_question.strip():
-        # Ajouter la question à l'historique
-        st.session_state.chat_history.append(("User", user_question))
-        with chat_container:
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(user_question)
-            with st.chat_message("assistant", avatar="🤖"):
-                placeholder = st.empty()
-                full_response = ""
-                for chunk in generate_answer_stream(user_question, rag_chain):
-                    full_response = chunk  # Remplacez, car le générateur envoie le texte cumulé
-                    placeholder.markdown(full_response)
-                st.session_state.chat_history.append(("Assistant", full_response))
+user_question = st.chat_input(
+    placeholder="Posez votre question juridique ici..."
+) or st.session_state.get("user_input", "")
 
-        # Réinitialiser l'entrée utilisateur
-        st.session_state.user_input = ""
+st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # JavaScript pour auto-scroll
-    st.markdown("""
-    <script>
-        const targetNode = window.parent.document.querySelector('section[data-testid="stContainerWithHeight"]');
-        if (targetNode) {
-            targetNode.scrollTop = targetNode.scrollHeight;
-        }
-    </script>
-    """, unsafe_allow_html=True)
+# ----------------------------
+# TRAITEMENT DU MESSAGE
+# ----------------------------
+if user_question and user_question.strip():
+    st.session_state.chat_history.append(("User", user_question))
+    with st.chat_message("user", avatar="👤"):
+        st.markdown(user_question)
+    with st.chat_message("assistant", avatar="🤖"):
+        placeholder = st.empty()
+        full_response = ""
+        for chunk in generate_answer_stream(user_question, rag_chain):
+            full_response = chunk
+            placeholder.markdown(full_response)
+        st.session_state.chat_history.append(("Assistant", full_response))
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.session_state.user_input = ""
+
+# ----------------------------
+# SCROLL AUTOMATIQUE
+# ----------------------------
+st.markdown("""
+<script>
+const chatContainer = window.parent.document.getElementById('chat');
+if (chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+</script>
+""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
