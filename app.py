@@ -12,16 +12,16 @@ if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# CSS : SOBRE ET MODERNE
+# CSS : SIMPLE (NOIR SUR BLANC)
 # -----------------------------
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: #F9FAFB;
+    background-color: #FFFFFF;
     font-family: "Inter", sans-serif;
-    color: #1F2A44;
+    color: #000000;
 }
 
 /* Container principal */
@@ -31,7 +31,6 @@ html, body, [data-testid="stAppViewContainer"] {
     height: 100vh;
     max-width: 900px;
     margin: auto;
-    padding: 1rem;
 }
 
 /* Header */
@@ -40,34 +39,32 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 1rem 0 0.5rem 0;
 }
 .header h1 {
-    font-size: 1.9rem;
+    font-size: 1.8rem;
     margin: 0;
-    color: #1F2A44;
+    color: #000000;
 }
 .header p {
-    font-size: 0.95rem;
-    color: #6B7280;
+    font-size: 0.9rem;
+    color: #000000;
     margin-top: 0.3rem;
 }
 
 /* Bouton effacer */
 .clear-btn {
     position: absolute;
-    top: 1rem;
+    top: 1.2rem;
     right: 1rem;
-    background: linear-gradient(135deg, #3B82F6, #2563EB);
-    color: #FFFFFF;
-    border: none;
-    border-radius: 16px;
-    padding: 0.4rem 1rem;
+    background: #FFFFFF;
+    color: #000000;
+    border: 1px solid #000000;
+    border-radius: 20px;
+    padding: 0.35rem 0.9rem;
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .clear-btn:hover {
-    background: linear-gradient(135deg, #2563EB, #1D4ED8);
-    transform: scale(1.03);
+    background: #E8E8E8;
 }
 
 /* Zone du chat */
@@ -77,47 +74,45 @@ html, body, [data-testid="stAppViewContainer"] {
     overflow-y: auto;
     padding: 1rem;
     border-radius: 12px;
-    background-color: #F9FAFB;
-    border: 1px solid #E5E7EB;
+    background-color: #FFFFFF;
+    border: 1px solid #000000;
     scroll-behavior: smooth;
 }
 .chat::-webkit-scrollbar {
     width: 6px;
 }
 .chat::-webkit-scrollbar-thumb {
-    background: #D1D5DB;
+    background: #000000;
     border-radius: 4px;
 }
 
 /* Messages */
 .stChatMessage {
-    margin-bottom: 0.8rem !important;
+    margin-bottom: 0.75rem !important;
 }
 .stChatMessage .stMarkdown {
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    padding: 0.8rem 1rem;
     line-height: 1.5;
-    max-width: 80%;
-    border: 1px solid #E5E7EB;
-    animation: fadeIn 0.3s ease-out;
+    max-width: 75%;
+    border: 1px solid #000000;
+    animation: fadeIn 0.25s ease-out;
 }
 
 /* Couleurs des bulles */
 .stChatMessage.user .stMarkdown {
-    background: #D1E9FF;
-    color: #1F2A44;
+    background: #F0F0F0;
+    color: #000000;
     margin-left: auto;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 .stChatMessage.assistant .stMarkdown {
     background: #FFFFFF;
-    color: #1F2A44;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    color: #000000;
 }
 
 /* Animation d'apparition */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -127,20 +122,20 @@ html, body, [data-testid="stAppViewContainer"] {
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0.5rem 0;
+    margin-bottom: 0.5rem;
 }
 .suggestions button {
-    background: #E5E7EB;
-    border: 1px solid #D1D5DB;
-    border-radius: 16px;
-    padding: 0.5rem 1rem;
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    border-radius: 20px;
+    padding: 0.5rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;
-    color: #1F2A44;
-    transition: background-color 0.2s ease;
+    color: #000000;
+    transition: all 0.2s ease;
 }
 .suggestions button:hover {
-    background: #DBEAFE;
+    background: #E8E8E8;
 }
 
 /* Input fixée */
@@ -150,8 +145,8 @@ html, body, [data-testid="stAppViewContainer"] {
     left: 0;
     right: 0;
     background: #FFFFFF;
-    border-top: 1px solid #E5E7EB;
-    padding: 0.75rem;
+    border-top: 1px solid #000000;
+    padding: 0.6rem 0.75rem;
 }
 .input-inner {
     max-width: 900px;
@@ -166,7 +161,7 @@ footer {visibility: hidden !important;}
 # -----------------------------
 # HEADER
 # -----------------------------
-st.markdown('<div class="main"><div class="header"><h1>⚖️ OhadAI</h1><p>Assistant juridique OHADA</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="header"><h1>⚖️ OhadAI</h1><p>Assistant juridique OHADA</p></div>', unsafe_allow_html=True)
 
 # -----------------------------
 # SUGGESTIONS (avant premier message)
@@ -191,7 +186,7 @@ if st.session_state.suggestions_visible:
 st.markdown('<div class="chat" id="chatBox">', unsafe_allow_html=True)
 
 # Bouton effacer
-if st.button("🗑️ Effacer", key="clear_chat", help="Réinitialiser le chat"):
+if st.button("🗑️ Effacer la conversation", key="clear_chat", help="Réinitialiser le chat"):
     st.session_state.chat_history = []
     st.session_state.suggestions_visible = True
     st.rerun()
@@ -237,5 +232,3 @@ const chatBox = window.parent.document.getElementById("chatBox");
 if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 </script>
 """, unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
