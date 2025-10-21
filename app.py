@@ -15,17 +15,40 @@ st.set_page_config(
 # -----------------------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False  # Mode clair par défaut pour sobriété
 
 # -----------------------------------------
-# CSS : DESIGN PREMIUM ET FLUIDE
+# CSS : DESIGN SOBRE ET MODERNE
 # -----------------------------------------
-st.markdown("""
+dark_mode_css = """
 <style>
-/* Supprime le scroll global */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+/* Mode clair (sobriété par défaut) */
+:root {
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
+    --accent-color: #495057;
+    --bubble-user: #e9ecef;
+    --bubble-assistant: #ffffff;
+    --border-color: #dee2e6;
+}
+
+/* Mode sombre (moderne et optionnel) */
+[data-theme="dark"] {
+    --bg-color: #212529;
+    --text-color: #f8f9fa;
+    --accent-color: #ced4da;
+    --bubble-user: #343a40;
+    --bubble-assistant: #495057;
+    --border-color: #6c757d;
+}
+
+/* Global */
+html, body, [data-testid="stAppViewContainer"] {
     height: 100%;
     overflow: hidden !important;
-    background-color: #f7f9fc !important;
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
     font-family: "Inter", sans-serif !important;
 }
 
@@ -33,45 +56,51 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
 .main-container {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     height: 100vh;
-    max-width: 850px;
+    max-width: 900px;
     margin: auto;
-    padding: 1rem 1.5rem;
+    padding: 1rem;
 }
 
 /* Header */
 .header {
     text-align: center;
-    padding-bottom: 0.5rem;
+    padding: 1rem 0;
 }
 .header h1 {
-    font-size: 2rem;
-    color: #1f2937;
-    margin-bottom: 0.3rem;
+    font-size: 1.8rem;
+    color: var(--text-color);
+    margin: 0;
 }
 .header p {
-    color: #4b5563;
-    font-size: 1rem;
+    color: var(--accent-color);
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+}
+
+/* Toggle dark mode (moderne, discret) */
+.dark-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.85rem;
 }
 
 /* Zone du chat */
 .chat-container {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
     padding: 1rem;
-    margin: 1rem 0;
-    border-radius: 16px;
-    background: #ffffff;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: var(--accent-color) transparent;
 }
 
 /* Messages */
 .stChatMessage {
-    margin-bottom: 14px !important;
+    margin-bottom: 1rem !important;
     display: flex !important;
 }
 .stChatMessage.user {
@@ -81,19 +110,42 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     justify-content: flex-start;
 }
 .stChatMessage .stMarkdown {
-    border-radius: 18px;
-    padding: 12px 16px;
-    max-width: 75%;
-    line-height: 1.5;
-    animation: fadeIn 0.25s ease-in-out;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    max-width: 80%;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease-out;
+    border: 1px solid var(--border-color);
 }
 .stChatMessage.user .stMarkdown {
-    background-color: #d1fae5;
-    color: #064e3b;
+    background-color: var(--bubble-user);
+    color: var(--text-color);
 }
 .stChatMessage.assistant .stMarkdown {
-    background-color: #e0f2fe;
-    color: #0c4a6e;
+    background-color: var(--bubble-assistant);
+    color: var(--text-color);
+}
+
+/* Suggestions */
+.suggestions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.5rem 0;
+}
+.suggested-button {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    transition: background-color 0.2s ease;
+}
+.suggested-button:hover {
+    background-color: var(--border-color);
 }
 
 /* Input fixée */
@@ -102,72 +154,63 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     bottom: 0;
     left: 0;
     right: 0;
-    background: #ffffffcc;
-    backdrop-filter: blur(8px);
-    border-top: 1px solid #e5e7eb;
-    padding: 12px 0;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+    background: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 0;
 }
 .input-container {
-    max-width: 850px;
+    max-width: 900px;
     margin: auto;
-    padding: 0 1.5rem;
-}
-
-/* Boutons suggérés */
-.suggestions {
-    text-align: center;
-    margin-top: 0.5rem;
-}
-.suggested-button {
-    display: inline-block;
-    background-color: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
-    padding: 8px 16px;
-    margin: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #374151;
-    transition: all 0.2s ease-in-out;
-}
-.suggested-button:hover {
-    background-color: #e5e7eb;
-    transform: translateY(-1px);
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
 }
 
 /* Effets */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* Supprime le footer Streamlit */
 footer {visibility: hidden !important;}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(dark_mode_css, unsafe_allow_html=True)
+
+# Appliquer le thème
+if st.session_state.dark_mode:
+    st.markdown('<body data-theme="dark">', unsafe_allow_html=True)
+else:
+    st.markdown('<body data-theme="light">', unsafe_allow_html=True)
 
 # -----------------------------------------
 # LAYOUT PRINCIPAL
 # -----------------------------------------
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# En-tête
+# Toggle dark mode (moderne et discret)
+with st.container():
+    if st.button("🌙 Mode sombre" if not st.session_state.dark_mode else "☀️ Mode clair", key="toggle_theme", help="Changer le thème"):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+# En-tête minimal
 st.markdown("""
 <div class="header">
     <h1>⚖️ OhadAI</h1>
-    <p>Votre assistant juridique intelligent basé sur le droit OHADA</p>
+    <p>Assistant juridique OHADA</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Suggestions rapides
+# Suggestions rapides (minimalistes)
 st.markdown('<div class="suggestions">', unsafe_allow_html=True)
 for q in [
-    "Quelle est la procédure pour un arbitrage ?",
-    "La SARL est-elle une société de personnes ou de capitaux ?",
-    "Quels articles de l'AUSCGIE régissent le contrat commercial ?"
+    "Procédure d'arbitrage ?",
+    "SARL : société de personnes ou capitaux ?",
+    "Articles AUSCGIE sur contrat commercial ?"
 ]:
-    if st.button(q, key=q, help="Cliquez pour poser cette question"):
+    if st.button(q, key=q, help="Poser cette question"):
         st.session_state.user_input = q
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -175,29 +218,28 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="chat-container" id="chatBox">', unsafe_allow_html=True)
 for speaker, message in st.session_state.chat_history:
     role = "user" if speaker == "User" else "assistant"
-    with st.chat_message(role, avatar="👤" if role == "user" else "🤖"):
+    with st.chat_message(role):
         st.markdown(message)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Effacer la conversation
-if st.button("🗑️ Effacer la conversation", key="clear_chat", use_container_width=True):
-    st.session_state.chat_history = []
-    st.rerun()
-
-# Barre d'input fixée
+# Barre d'input fixée avec bouton effacer intégré
 st.markdown('<div class="input-bar"><div class="input-container">', unsafe_allow_html=True)
-user_question = st.chat_input(
-    placeholder="Posez votre question ici..."
-) or st.session_state.get("user_input", "")
+col1, col2 = st.columns([8, 2])
+with col1:
+    user_question = st.chat_input(placeholder="Posez votre question...") or st.session_state.get("user_input", "")
+with col2:
+    if st.button("🗑️ Effacer", key="clear_chat"):
+        st.session_state.chat_history = []
+        st.rerun()
 st.markdown('</div></div>', unsafe_allow_html=True)
 
 # Traitement du message
 if user_question and user_question.strip():
     st.session_state.chat_history.append(("User", user_question))
-    with st.chat_message("user", avatar="👤"):
+    with st.chat_message("user"):
         st.markdown(user_question)
 
-    with st.chat_message("assistant", avatar="🤖"):
+    with st.chat_message("assistant"):
         placeholder = st.empty()
         full_response = ""
         for chunk in generate_answer_stream(user_question, rag_chain):
@@ -207,7 +249,7 @@ if user_question and user_question.strip():
 
     st.session_state.user_input = ""
 
-# Scroll automatique fluide
+# Scroll automatique
 st.markdown("""
 <script>
 const chatBox = window.parent.document.getElementById('chatBox');
