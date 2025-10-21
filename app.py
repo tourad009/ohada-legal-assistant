@@ -1,497 +1,288 @@
 import streamlit as st
 from rag_pipeline import generate_answer_stream, rag_chain
-import html as _html
-import time
 
 # -----------------------------
-# PAGE CONFIG
+# CONFIGURATION
 # -----------------------------
 st.set_page_config(page_title="OhadAI ⚖️", page_icon="⚖️", layout="wide")
 
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []  # list of (role, text)
+    st.session_state.chat_history = []
 if "suggestions_visible" not in st.session_state:
     st.session_state.suggestions_visible = True
 
 # -----------------------------
-# STYLES & JS (smart autoscroll)
+# CSS OPTIMISÉ POUR HAUTEUR PARFAITE
 # -----------------------------
-st.markdown(
-    """
+st.markdown("""
 <style>
-:root{
-  --bg:#0f1724;
-  --card:#0b1220;
-  --accent:#7c3aed;
-  --muted:#94a3b8;
+:root {
+    --primary: #2D3748;
+    --primary-dark: #1A202C;
+    --primary-light: #4A5568;
+    --background: #FFFFFF;
+    --text: #1A202C;
+    --text-light: #4A5568;
+    --border: #E2E8F0;
+    --user-bg: #F7FAFC;
+    --assistant-bg: #FFFFFF;
 }
-html, body, [data-testid="stAppViewContainer"]{
-  background: linear-gradient(180deg,#f7fafc 0%, #eef2f7 100%) !important;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+
+html, body, [data-testid="stAppViewContainer"] {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
 }
-.app-wrap {
-  max-width:900px;
-  margin:14px auto 80px auto;
-  padding:0 16px;
+
+/* Conteneur principal - hauteur 100vh */
+.main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+    overflow: hidden;
 }
+
+/* En-tête ultra-compact */
 .header {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-bottom:10px;
+    text-align: center;
+    padding: 0.6rem 0 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.2rem;
 }
-.header .logo {
-  width:52px;
-  height:52px;
-  border-radius:12px;
-  background:linear-gradient(135deg,var(--accent),#4f46e5);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  font-weight:700;
-}
+
 .header h1 {
-  margin:0;
-  font-size:1.25rem;
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--text);
+    font-weight: 600;
 }
+
 .header p {
-  margin:0;
-  color:var(--muted);
-  font-size:0.9rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin: 0.2rem 0 0 0;
 }
-.ascii {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-  color: #334155;
-  font-size:11px;
-  margin-top:8px;
+
+/* Bouton effacer miniaturisé */
+.clear-btn {
+    position: fixed;
+    top: 0.6rem;
+    right: 1rem;
+    z-index: 1000;
+    background: var(--background);
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
 }
-.chat-frame {
-  border-radius:12px;
-  background: white;
-  padding:12px;
-  box-shadow: 0 8px 30px rgba(2,6,23,0.06);
-  max-height: calc(100vh - 220px);
-  overflow: hidden;
-  display:flex;
-  flex-direction:column;
+
+.clear-btn:hover {
+    background: var(--primary);
+    color: white;
 }
-.messages {
-  overflow-y: auto;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  scroll-behavior: smooth;
+
+/* Zone de chat - hauteur calculée et scroll invisible */
+.chat-container {
+    flex: 1;
+    overflow-y: scroll; /* garde le scroll fonctionnel */
+    padding: 0.4rem 0.3rem;
+    margin: 0 0.4rem;
+    border-radius: 6px;
+    background-color: var(--background);
+    margin-bottom: 3.2rem; /* espace pour le footer */
+    max-height: calc(100vh - 110px); /* ajustement pixel-perfect */
+    
+    /* Scroll invisible */
+    -ms-overflow-style: none;  /* IE et Edge */
+    scrollbar-width: none;     /* Firefox */
 }
-.row {
-  display:flex;
-  gap:10px;
-  align-items:flex-end;
+.chat-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari et Opera */
 }
-.row.user {
-  justify-content:flex-end;
+
+/* Messages (inchangés) */
+.stChatMessage {
+    margin-bottom: 0.5rem !important;
+    animation: fadeIn 0.2s ease-out;
 }
-.row .avatar {
-  width:36px;
-  height:36px;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:600;
+
+.stChatMessage .stMarkdown {
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    line-height: 1.4;
+    max-width: 85%;
+    border: 1px solid var(--border);
+    background: var(--assistant-bg);
+    color: var(--text);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
 }
-.avatar.user {
-  background:linear-gradient(135deg,#0ea5e9,#0284c7);
-  color:white;
+
+.stChatMessage.user .stMarkdown {
+    background: var(--user-bg);
+    margin-left: auto;
 }
-.avatar.bot {
-  background:#f1f5f9;
-  color:#0f1724;
-  border:1px solid #e6edf3;
+
+/* Footer ultra-compact */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--primary-dark);
+    padding: 0.4rem 0.8rem;
+    z-index: 100;
+    border-top: 1px solid var(--primary);
+    height: 45px; /* hauteur réduite */
+    display: flex;
+    align-items: center;
 }
-.bubble {
-  max-width:76%;
-  padding:10px 12px;
-  border-radius:12px;
-  line-height:1.4;
-  white-space: pre-wrap;
-  box-shadow: 0 6px 14px rgba(2,6,23,0.04);
+
+.footer .stTextInput {
+    background: var(--primary-light) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    height: 36px !important;
 }
-.user .bubble {
-  background: linear-gradient(135deg,#0ea5e9,#0284c7);
-  color:white;
-  border:none;
+
+.footer .stTextInput input {
+    color: white !important;
+    font-size: 0.9rem !important;
+    padding: 0.4rem 0.6rem !important;
 }
-.bot .bubble {
-  background: white;
-  color:#0f1724;
-  border:1px solid #eef2f7;
+
+.footer .stTextInput input::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
 }
-.cursor {
-  display:inline-block;
-  width:8px; height:14px;
-  background:#cbd5e1;
-  margin-left:6px;
-  border-radius:2px;
-  animation: blink 1s steps(2,start) infinite;
+
+/* Suggestions */
+.suggestions-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.3rem 0 0.4rem 0;
+    padding: 0;
 }
-@keyframes blink {
-  to { opacity:0.1; }
+
+.suggestion-btn {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--primary);
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
 }
-.suggestions {
-  display:flex;
-  gap:8px;
-  padding:10px 6px;
-  flex-wrap:wrap;
+
+.suggestion-btn:hover {
+    background: var(--primary);
+    color: white;
 }
-.suggestion {
-  background:transparent;
-  border:1px solid #e6eef8;
-  padding:8px 12px;
-  border-radius:999px;
-  cursor:pointer;
-  color:#0f1724;
-  font-weight:500;
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-.suggestion:hover {
-  background:#eef2ff;
-}
-.input-area {
-  position: sticky;
-  bottom:0;
-  background: transparent;
-  padding-top:10px;
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
-.input-box {
-  flex:1;
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
-.send-btn {
-  background: linear-gradient(135deg,var(--accent),#4f46e5);
-  color:white;
-  border:none;
-  padding:8px 12px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-}
-.small-muted {
-  color:var(--muted);
-  font-size:12px;
-  margin-left:8px;
-}
+
+/* Supprime le footer Streamlit */
+footer {visibility: hidden !important;}
 </style>
+""", unsafe_allow_html=True)
 
+# -----------------------------
+# STRUCTURE PARFAITEMENT AJUSTÉE
+# -----------------------------
+# 1. En-tête
+st.markdown('''
+<div class="header">
+    <h1>⚖️ OhadAI</h1>
+    <p>Assistant juridique OHADA</p>
+</div>
+''', unsafe_allow_html=True)
+
+# 2. Bouton effacer
+st.markdown('''
+<button class="clear-btn">
+    🗑️ Effacer
+</button>
 <script>
-window._ohadai_autoScroll = true;
-window._ohadai_scroll_threshold = 60;
-function __ohadai_install_scroll_listener(chatId) {
-  const el = document.getElementById(chatId);
-  if (!el || el._ohadai_installed) return;
-  el._ohadai_installed = true;
-  el.addEventListener('scroll', () => {
-    const atBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < window._ohadai_scroll_threshold;
-    window._ohadai_autoScroll = atBottom;
-  }, {passive:true});
-}
-function scrollIfAllowed(chatId) {
-  const el = document.getElementById(chatId);
-  if (!el) return;
-  if (window._ohadai_autoScroll) {
-    el.scrollTo({ top: el.scrollHeight, behavior:'smooth' });
-  }
-}
+document.querySelector('.clear-btn').addEventListener('click', function() {
+    if(confirm('Voulez-vous vraiment effacer l\'historique ?')) {
+        window.location.reload();
+    }
+});
 </script>
-    """,
-    unsafe_allow_html=True,
-)
+''', unsafe_allow_html=True)
 
-# -----------------------------
-# HEADER with ASCII art mini-logo
-# -----------------------------
-st.markdown('<div class="app-wrap">', unsafe_allow_html=True)
-st.markdown(
-    """
-    <div class="header">
-      <div class="logo">OA</div>
-      <div>
-        <h1>OhadAI <span style="color:#6b7280; font-weight:400">⚖️ Assistant OHADA</span></h1>
-        <div class="small-muted">Réponses juridiques basées sur ton corpus — interface optimisée</div>
-      </div>
-    </div>
-    <pre class="ascii">  ____  _   _  _   _  _   _   ___ 
- / __ \\| | | || \\ | || \\ | | / _ \\
-| |  | | | | ||  \\| ||  \\| || | | |
-| |  | | | | || . ` || . ` || | | |
-| |__| | |_| || |\\  || |\\  || |_| |
- \\____/ \\___/ |_| \\_||_| \\_| \\___/ </pre>
-    """,
-    unsafe_allow_html=True,
-)
+# 3. Conteneur de chat avec hauteur parfaite
+st.markdown('<div class="chat-container" id="chatBox">', unsafe_allow_html=True)
 
-# -----------------------------
-# CHAT FRAME + SUGGESTIONS
-# -----------------------------
-st.markdown('<div class="chat-frame">', unsafe_allow_html=True)
-
-# Suggestions (only when no history)
+# 4. Suggestions (version originale conservée)
 if st.session_state.suggestions_visible and not st.session_state.chat_history:
-    st.markdown('<div class="suggestions">', unsafe_allow_html=True)
-    presets = [
-        "Procédure d'arbitrage OHADA",
-        "SARL : société de personnes ou de capitaux ?",
-        "Que dit le droit OHADA sur cession de parts ?"
+    st.markdown('<div class="suggestions-container">', unsafe_allow_html=True)
+    suggestions = [
+        ("Procédure d'arbitrage OHADA", "arbitrage"),
+        ("SARL : société de personnes ou de capitaux ?", "sarl"),
+        ("Articles AUSCGIE sur contrats", "contrats")
     ]
-    for s in presets:
-        safe_s = _html.escape(s)
-        st.markdown(
-            f"""
-            <button class="suggestion"
-                    onclick="if(window.streamlitSetComponentValue){{
-                        window.streamlitSetComponentValue('{safe_s}');
-                    }}
-                    const el=document.querySelector('input[placeholder=\\'Posez votre question juridique...\\']');
-                    if(el) el.focus();">
-                {safe_s}
-            </button>
-            """,
-            unsafe_allow_html=True,
-        )
+    for text, key in suggestions:
+        st.markdown(f'''
+        <button class="suggestion-btn" onclick="{
+            f"window.streamlitSetComponentValue('{text}')"
+        }">{text}</button>
+        ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Messages container
-st.markdown('<div id="messages" class="messages"></div>', unsafe_allow_html=True)
+# 5. Affichage des messages
+for speaker, msg in st.session_state.chat_history:
+    role = "user" if speaker == "User" else "assistant"
+    with st.chat_message(role):
+        st.markdown(msg)
 
-# Install scroll listener
-st.markdown(
-    """
-<script>
-__ohadai_install_scroll_listener('messages');
-</script>
-""",
-    unsafe_allow_html=True,
-)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# -----------------------------
-# RENDER EXISTING HISTORY
-# -----------------------------
-def _render_history():
-    html_parts = []
-    for role, text in st.session_state.chat_history:
-        safe_text = _html.escape(text).replace("\n", "<br/>")
-        if role == "user":
-            html_parts.append(
-                f'''
-                <div class="row user">
-                  <div class="bubble">{safe_text}</div>
-                  <div class="avatar user">U</div>
-                </div>
-                '''
-            )
-        else:
-            html_parts.append(
-                f'''
-                <div class="row bot">
-                  <div class="avatar bot">⚖️</div>
-                  <div class="bubble">{safe_text}</div>
-                </div>
-                '''
-            )
-    if html_parts:
-        joined = "\n".join(html_parts)
-        st.markdown(
-            f"""
-<script>
-const m = document.getElementById('messages');
-if (m) {{
-  m.innerHTML = `{joined}`;
-  scrollIfAllowed('messages');
-}}
-</script>
-""",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            """
-<script>
-const m = document.getElementById('messages');
-if (m && m.innerHTML.trim() === '') {
-  m.innerHTML = '<div style="color:#94a3b8; padding:12px;">Posez votre question — ex : "Procédure d\'arbitrage OHADA"</div>';
-}
-</script>
-""",
-            unsafe_allow_html=True,
-        )
-
-_render_history()
-
-# -----------------------------
-# INPUT AREA (sticky)
-# -----------------------------
-st.markdown(
-    """
-    <div class="input-area">
-      <div class="input-box">
-    """,
-    unsafe_allow_html=True,
-)
-
-user_question = st.text_input("", key="ohadai_input", placeholder="Posez votre question juridique...")
-st.markdown(
-    """
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button class="send-btn" id="ohadai_send">Envoyer</button>
-      <div class="small-muted">Streaming · OHADA</div>
-    </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    """
-<script>
-const sendBtn = document.getElementById('ohadai_send');
-if (sendBtn) {
-  sendBtn.addEventListener('click', () => {
-    const el = document.querySelector('input[placeholder="Posez votre question juridique..."]');
-    if (el) {
-      el.dispatchEvent(new KeyboardEvent('keydown',{'key':'Enter'}));
-    }
-  });
-}
-</script>
-""",
-    unsafe_allow_html=True,
-)
-
-# -----------------------------
-# HANDLE SUBMISSION & STREAMING
-# -----------------------------
-if user_question and user_question.strip():
-    q = user_question.strip()
-    st.session_state.suggestions_visible = False
-    st.session_state.chat_history.append(("user", q))
-    st.session_state["ohadai_input"] = ""
-
-    safe_q = _html.escape(q).replace("\n", "<br/>")
-    st.markdown(
-        f"""
-<script>
-const m = document.getElementById('messages');
-if (m) {{
-  m.innerHTML += `
-    <div class="row user">
-      <div class="bubble">{safe_q}</div>
-      <div class="avatar user">U</div>
-    </div>
-  `;
-  scrollIfAllowed('messages');
-}}
-</script>
-""",
-        unsafe_allow_html=True,
-    )
-
-    placeholder_id = f"assistant_{int(time.time()*1000)}"
-    st.markdown(
-        f"""
-<script>
-const m = document.getElementById('messages');
-if (m) {{
-  m.innerHTML += `
-    <div class="row bot" id="{placeholder_id}_row">
-      <div class="avatar bot">⚖️</div>
-      <div class="bubble" id="{placeholder_id}">…<span class="cursor"></span></div>
-    </div>
-  `;
-  scrollIfAllowed('messages');
-}}
-</script>
-""",
-        unsafe_allow_html=True,
-    )
-
-    full_response = ""
-    try:
-        for chunk in generate_answer_stream(q, rag_chain):
-            full_response = chunk
-            safe_chunk = _html.escape(full_response).replace("\n", "<br/>")
-            st.markdown(
-                f"""
-<script>
-const el = document.getElementById('{placeholder_id}');
-if (el) {{
-  el.innerHTML = `{safe_chunk}<span class="cursor"></span>`;
-}}
-scrollIfAllowed('messages');
-</script>
-""",
-                unsafe_allow_html=True,
-            )
-        final_safe = _html.escape(full_response).replace("\n", "<br/>")
-        st.markdown(
-            f"""
-<script>
-const el = document.getElementById('{placeholder_id}');
-if (el) {{
-  el.innerHTML = `{final_safe}`;
-}}
-scrollIfAllowed('messages');
-</script>
-""",
-            unsafe_allow_html=True,
-        )
-        st.session_state.chat_history.append(("assistant", full_response))
-    except Exception as e:
-        err = f"Erreur lors de la génération : {str(e)}"
-        safe_err = _html.escape(err).replace("\n", "<br/>")
-        st.session_state.chat_history.append(("assistant", err))
-        st.markdown(
-            f"""
-<script>
-const el = document.getElementById('{placeholder_id}');
-if (el) {{
-  el.innerHTML = `{safe_err}`;
-}}
-scrollIfAllowed('messages');
-</script>
-""",
-            unsafe_allow_html=True,
-        )
-
-# -----------------------------
-# Ensure scroll listener and final scroll
-# -----------------------------
-st.markdown(
-    """
-<script>
-__ohadai_install_scroll_listener('messages');
-scrollIfAllowed('messages');
-</script>
-""",
-    unsafe_allow_html=True,
-)
-
-# close wrapper
+# 6. Footer compact
+st.markdown('<div class="footer">', unsafe_allow_html=True)
+user_question = st.chat_input("Posez votre question juridique...")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# Footer credit
+# TRAITEMENT DES MESSAGES
 # -----------------------------
-st.markdown(
-    """
-    <div style="max-width:900px; margin:8px auto 48px auto; color:#475569; font-size:12px;">
-      ⚠️ Prototype UI — Inspiré par Streamlit & composants chat — streaming pris en charge.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+if user_question and user_question.strip():
+    st.session_state.suggestions_visible = False
+    st.session_state.chat_history.append(("User", user_question))
+    with st.chat_message("user"):
+        st.markdown(user_question)
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        full_response = ""
+        for chunk in generate_answer_stream(user_question, rag_chain):
+            full_response = chunk
+            placeholder.markdown(full_response)
+        st.session_state.chat_history.append(("Assistant", full_response))
+
+# -----------------------------
+# SCROLL AUTOMATIQUE
+# -----------------------------
+st.markdown("""
+<script>
+const chatBox = document.getElementById("chatBox");
+if (chatBox) {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+""", unsafe_allow_html=True)
