@@ -7,17 +7,19 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from dotenv import load_dotenv
+from pydantic import SecretStr
 
-# -----------------------------
-# 1. Télécharger et dézipper la base vectorielle
-# -----------------------------
+load_dotenv()
+
+
+# Download and unzip vectorstore
 def setup_vectorstore():
     local_dir = "ohada_vectorstore"
     repo_dir = snapshot_download(
-        repo_id="TouradAi/ohada-vectorstore",
-        repo_type="dataset"
+        repo_id="TouradAi/ohada-vectorstore", repo_type="dataset"
     )
-    # Recherche du zip
+
     zip_path = None
     for f in os.listdir(repo_dir):
         if f.endswith(".zip"):
@@ -26,12 +28,10 @@ def setup_vectorstore():
     if not zip_path:
         raise FileNotFoundError(f"Aucun fichier .zip trouvé dans {repo_dir}")
 
-    # Décompression
     os.makedirs(local_dir, exist_ok=True)
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(local_dir)
 
-    # Debug : afficher le contenu extrait
     print(f"✅ Contenu extrait dans {local_dir}:")
     for root, dirs, files in os.walk(local_dir):
         for file in files:
@@ -39,32 +39,23 @@ def setup_vectorstore():
 
     return local_dir
 
-# -----------------------------
-# 2. Charger la base vectorielle
-# -----------------------------
+
 def load_vectorstore(local_dir):
     embedding_model = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}
+        model_kwargs={"device": "cpu"},
     )
     vectorstore = Chroma(
-        persist_directory=local_dir,
-        embedding_function=embedding_model
+        persist_directory=local_dir, embedding_function=embedding_model
     )
-    # Debug : vérifier le nombre de documents
-    print(f"🔍 Nombre de documents dans Chroma : {vectorstore._collection.count()}")
     return vectorstore
 
-# -----------------------------
-# 3. Initialisation du retriever
-# -----------------------------
+
 def setup_retriever(vectorstore):
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     return retriever
 
-# -----------------------------
-# 4. Prompt OHADA
-# -----------------------------
+
 def setup_prompt():
     prompt = ChatPromptTemplate.from_template("""
     ### CONTEXTE JURIDIQUE OHADA
@@ -78,22 +69,18 @@ def setup_prompt():
     """)
     return prompt
 
-# -----------------------------
-# 5. LLM via OpenRouter
-# -----------------------------
+
 def setup_llm():
     llm = ChatOpenAI(
-        api_key=os.getenv("OPENROUTER_API_KEY"),
+        api_key=SecretStr(os.environ.get("OPENROUTER_API_KEY") or ""),
         base_url="https://openrouter.ai/api/v1",
         model="qwen/qwen-2.5-72b-instruct",
         temperature=0.1,
-        max_tokens=1000
+        model_kwargs={"max_completion_tokens": 1000},
     )
     return llm
 
-# -----------------------------
-# 6. Construire la chaîne RAG
-# -----------------------------
+
 def setup_rag_chain(retriever, prompt, llm):
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
@@ -106,9 +93,7 @@ def setup_rag_chain(retriever, prompt, llm):
     )
     return rag_chain
 
-# -----------------------------
-# 7. Fonction de génération (streaming)
-# -----------------------------
+
 def generate_answer_stream(question: str, rag_chain):
     """
     Génère une réponse au format streaming depuis la chaîne RAG.
@@ -126,9 +111,8 @@ def generate_answer_stream(question: str, rag_chain):
     except Exception as e:
         yield f"Erreur lors de la génération de la réponse : {str(e)}"
 
-# -----------------------------
-# Initialisation globale
-# -----------------------------
+
+# Global Initialization
 local_dir = setup_vectorstore()
 vectorstore = load_vectorstore(local_dir)
 retriever = setup_retriever(vectorstore)
