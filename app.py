@@ -63,3 +63,14 @@ if user_question:
     # Save answer in history
     st.session_state.messages.append({"role": "assistant", "content": final_response})
     save_chat_history(st.session_state.messages)
+
+# Auto-scroll to bottom
+scroll_script = """
+<script>
+    var chat = parent.document.querySelector('.stChatMessage:last-of-type');
+    if (chat) {
+        chat.scrollIntoView({behavior: 'smooth', block: 'end'});
+    }
+</script>
+"""
+st.markdown(scroll_script, unsafe_allow_html=True)

@@ -58,14 +58,27 @@ def setup_retriever(vectorstore):
 
 def setup_prompt():
     prompt = ChatPromptTemplate.from_template("""
-    ### CONTEXTE JURIDIQUE OHADA
     Tu es un assistant juridique expert en droit OHADA.
-    Ta mission : répondre aux questions juridiques posées par des personnes non expertes,
-    en reformulant la question dans un langage juridique précis et en y répondant sur la base exclusive du contexte fourni.
-    ### QUESTION
+
+    ### RÈGLES STRICTES DE RÉPONSE
+    1. Tu réponds **uniquement** en te basant sur le CONTEXTE fourni ci-dessous.
+    2. **Tu ne reformules jamais le contenu des articles** : si tu cites un article, tu le cites **mot pour mot**.
+    3. Tu n'inventes **aucune** information qui ne se trouve pas dans le CONTEXTE.
+    4. Si la réponse nécessite une information absente du CONTEXTE, tu dis :
+       > "Les informations disponibles dans les extraits fournis ne permettent pas de répondre entièrement à cette question."
+    5. Tu donnes une **réponse claire, concise et structurée**, adaptée à un non juriste.
+    6. **Avant de répondre**, reformule la question dans un langage juridique précis (1 phrase).
+
+    ### QUESTION POSÉE
     {question}
-    ### CONTEXTE
+
+    ### CONTEXTE À UTILISER (EXCLUSIF)
     {context}
+
+    ### FORMAT DE LA RÉPONSE
+    - Reformulation juridique de la question
+    - Réponse synthétique
+    - Si utile : **citation directe d’articles du contexte**
     """)
     return prompt
 
