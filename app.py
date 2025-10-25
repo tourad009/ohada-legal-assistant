@@ -5,63 +5,43 @@ from rag_pipeline import generate_answer_stream, rag_chain
 st.set_page_config(page_title="OHADA AI", page_icon="⚖️", layout="wide")
 
 # ------------------------
-# Style Global (sobre & pro)
+# Style minimal & adaptatif
 # ------------------------
 st.markdown("""
 <style>
-
-body {
-    background-color: #fafafa;
-    font-family: "Inter", sans-serif;
-}
-
-/* Chat Container */
 .chat-container {
     max-width: 900px;
     margin: auto;
     padding-top: 1rem;
 }
 
-/* Message Blocks */
 .chat-message {
     display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-    line-height: 1.5;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-/* Avatars */
-.chat-avatar {
-    font-size: 22px;
-    padding-top: 4px;
-}
-
-/* Bubble Style */
 .msg-bubble {
-    padding: 12px 16px;
-    border-radius: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
     max-width: 80%;
-    font-size: 16px;
+    font-size: 15px;
 }
 
-/* User Message Bubble */
+/* Let Streamlit handle colors based on theme */
 .user-msg {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    margin-left: auto;
+    align-self: flex-end;
+    border: 1px solid var(--border-color);
 }
 
-/* Assistant Message Bubble */
 .bot-msg {
-    background-color: #F1F3F8;
-    border: 1px solid #E0E3E9;
+    border: 1px solid var(--border-color);
 }
 
-/* Sidebar spacing */
-.sidebar .block-container {
-    margin-top: 2rem;
+.chat-avatar {
+    font-size: 20px;
+    padding-top: 2px;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -73,23 +53,19 @@ st.markdown("<h2 style='text-align:center;'>⚖️ OHADA AI — Assistant Juridi
 USER_AVATAR = "👤"
 BOT_AVATAR = "🤖"
 
-
 # ------------------------
-# History (Shelve)
+# History
 # ------------------------
 def load_chat_history():
     with shelve.open("chat_history") as db:
         return db.get("messages", [])
 
-
 def save_chat_history(messages):
     with shelve.open("chat_history") as db:
         db["messages"] = messages
 
-
 if "messages" not in st.session_state:
     st.session_state.messages = load_chat_history()
-
 
 # ------------------------
 # Sidebar
@@ -101,15 +77,14 @@ with st.sidebar:
         save_chat_history([])
 
 # ------------------------
-# Display Chat
+# Display chat
 # ------------------------
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
-    role = msg["role"]
-    avatar = USER_AVATAR if role == "user" else BOT_AVATAR
-    bubble_class = "user-msg" if role == "user" else "bot-msg"
-
+    avatar = USER_AVATAR if msg["role"] == "user" else BOT_AVATAR
+    bubble_class = "user-msg" if msg["role"] == "user" else "bot-msg"
+    
     st.markdown(
         f"""
         <div class="chat-message">
@@ -121,7 +96,7 @@ for msg in st.session_state.messages:
     )
 
 # ------------------------
-# Input
+# Input + streaming
 # ------------------------
 user_question = st.chat_input("Pose ta question sur le droit OHADA...")
 
@@ -129,7 +104,6 @@ if user_question:
     st.session_state.messages.append({"role": "user", "content": user_question})
     save_chat_history(st.session_state.messages)
 
-    # Streaming response
     placeholder = st.empty()
     full_response = ""
 
@@ -149,11 +123,3 @@ if user_question:
     save_chat_history(st.session_state.messages)
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-# Auto-scroll
-st.markdown("""
-<script>
-var chat = parent.document.querySelector('.chat-container');
-if(chat){ chat.scrollTop = chat.scrollHeight; }
-</script>
-""", unsafe_allow_html=True)
